@@ -1,21 +1,14 @@
-import { useState } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
-import { Menu } from "lucide-react";
+import { useRef, useState } from "react";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useSession, useLogoutMutation } from "@/features/auth";
 import { useCartQuery } from "@/features/cart/queries";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 function useCartItemCount() {
   const { data } = useCartQuery();
   return data?.quote.items.reduce((total, item) => total + item.quantity, 0) ?? 0;
-}
-
-function focusCatalogSearch() {
-  requestAnimationFrame(() => {
-    document.getElementById("catalog-search-input")?.focus();
-  });
 }
 
 function NavLink({ to, children }: { to: string; children: string }) {
@@ -75,6 +68,81 @@ function HeaderAuthArea({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
+/**
+ * O Figma desktop só mostra o ícone de lupa no header — nenhuma caixa de busca fica
+ * visível permanentemente na página (diferente do mobile, que tem uma caixa fixa no
+ * topo). Este componente reproduz isso: ícone por padrão, expande para um campo de
+ * texto ao clicar, envia a busca ao confirmar (Enter) e recolhe de novo ao perder o
+ * foco vazio ou ao apertar Escape.
+ */
+function HeaderSearch() {
+  const navigate = useNavigate();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const [expanded, setExpanded] = useState(false);
+  const [draft, setDraft] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  function open() {
+    setExpanded(true);
+    requestAnimationFrame(() => inputRef.current?.focus());
+  }
+
+  function close() {
+    setExpanded(false);
+    setDraft("");
+  }
+
+  function submit() {
+    const q = draft.trim() || undefined;
+    if (pathname === "/") {
+      navigate({ to: "/", search: (prev) => ({ ...prev, q, page: 1 }) });
+    } else {
+      navigate({ to: "/", search: { q, page: 1, sort: "recent" } });
+    }
+    close();
+  }
+
+  if (!expanded) {
+    return (
+      <button
+        type="button"
+        aria-label="Buscar NFTs"
+        className="rounded-sm focus-visible:outline-2 focus-visible:outline-ring"
+        onClick={open}
+      >
+        <img src="/icons/search.svg" alt="" className="size-5" />
+      </button>
+    );
+  }
+
+  return (
+    <form
+      role="search"
+      className="flex items-center"
+      onSubmit={(event) => {
+        event.preventDefault();
+        submit();
+      }}
+    >
+      <Input
+        ref={inputRef}
+        type="search"
+        aria-label="Buscar NFTs ou coleções"
+        placeholder="Buscar NFTs ou coleções"
+        value={draft}
+        onChange={(event) => setDraft(event.target.value)}
+        onBlur={() => {
+          if (!draft.trim()) close();
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") close();
+        }}
+        className="h-9 w-56"
+      />
+    </form>
+  );
+}
+
 function CartLink({ cartCount }: { cartCount: number }) {
   return (
     <Link
@@ -95,74 +163,7 @@ function CartLink({ cartCount }: { cartCount: number }) {
   );
 }
 
-function MobileNav() {
-  const [open, setOpen] = useState(false);
-  const navigate = useNavigate();
-  const close = () => setOpen(false);
-
-  return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          aria-label="Abrir menu"
-          className="md:hidden"
-        >
-          <Menu className="size-5" aria-hidden />
-        </Button>
-      </SheetTrigger>
-      <SheetContent side="right" className="w-4/5 gap-6 px-4 pb-6 pt-4 sm:max-w-xs">
-        <SheetHeader className="p-0">
-          <SheetTitle>KURIO</SheetTitle>
-        </SheetHeader>
-
-        <nav aria-label="Principal" className="flex flex-col gap-1">
-          <SheetClose asChild>
-            <Link
-              to="/"
-              className="rounded-md px-2 py-2.5 text-base text-foreground [&.active]:font-bold [&.active]:text-accent"
-            >
-              Início
-            </Link>
-          </SheetClose>
-          <span className="px-2 py-2.5 text-base text-foreground/50" aria-disabled="true">
-            Mercado
-          </span>
-          <span className="px-2 py-2.5 text-base text-foreground/50" aria-disabled="true">
-            Criadores
-          </span>
-          <span className="px-2 py-2.5 text-base text-foreground/50" aria-disabled="true">
-            Aprenda
-          </span>
-        </nav>
-
-        <hr className="border-border" />
-
-        <button
-          type="button"
-          className="flex items-center gap-3 rounded-md px-2 py-2.5 text-left text-base text-foreground"
-          onClick={() => {
-            close();
-            navigate({ to: "/" });
-            focusCatalogSearch();
-          }}
-        >
-          <img src="/icons/search.svg" alt="" className="size-5" />
-          Buscar NFTs
-        </button>
-
-        <div className="px-2">
-          <HeaderAuthArea onNavigate={close} />
-        </div>
-      </SheetContent>
-    </Sheet>
-  );
-}
-
 export function SiteHeader() {
-  const navigate = useNavigate();
   const cartCount = useCartItemCount();
 
   return (
@@ -183,26 +184,11 @@ export function SiteHeader() {
         </nav>
 
         <div className="hidden items-center gap-7 md:flex">
-          <button
-            type="button"
-            aria-label="Buscar NFTs"
-            className="rounded-sm focus-visible:outline-2 focus-visible:outline-ring"
-            onClick={() => {
-              navigate({ to: "/" });
-              focusCatalogSearch();
-            }}
-          >
-            <img src="/icons/search.svg" alt="" className="size-5" />
-          </button>
+          <HeaderSearch />
 
           <CartLink cartCount={cartCount} />
 
           <HeaderAuthArea />
-        </div>
-
-        <div className="flex items-center gap-4 md:hidden">
-          <CartLink cartCount={cartCount} />
-          <MobileNav />
         </div>
       </div>
     </header>

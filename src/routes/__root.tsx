@@ -1,9 +1,20 @@
-import { createRootRoute, Link, Outlet } from "@tanstack/react-router";
+import { createRootRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/router-devtools";
 import { queryClient } from "@/app/query-client";
 import { sessionQueryOptions } from "@/features/auth";
 import { useRealtimeSync } from "@/features/realtime/use-realtime-sync";
 import { SiteHeader } from "@/components/layout/site-header";
+import { SiteFooter } from "@/components/layout/site-footer";
+import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
+
+// Rodapé (desktop) só nas telas de mercado do Figma (Início, Detalhe, Carrinho,
+// Pagamento) — perfil/carteiras/login/cadastro/confirmação não têm rodapé no design.
+const FOOTER_ROUTES = new Set(["/", "/cart", "/checkout"]);
+
+function useShowFooter() {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  return FOOTER_ROUTES.has(pathname) || pathname.startsWith("/nft/");
+}
 
 function NotFound() {
   return (
@@ -19,6 +30,7 @@ function NotFound() {
 
 function RootLayout() {
   useRealtimeSync();
+  const showFooter = useShowFooter();
 
   return (
     <div className="flex min-h-svh flex-col">
@@ -29,10 +41,23 @@ function RootLayout() {
         Pular para o conteúdo
       </a>
       <SiteHeader />
-      <main id="main-content" className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
+      {/* tabIndex={-1}: sem isso o link "Pular para o conteúdo" move o hash da URL mas
+          não o foco de teclado de verdade (main não é focável por padrão) — o próximo
+          Tab reiniciaria do topo do documento em vez de continuar dentro do conteúdo. */}
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 pb-20 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring md:pb-6"
+      >
         <Outlet />
       </main>
-      {import.meta.env.DEV && <TanStackRouterDevtools position="bottom-right" />}
+      {showFooter ? <SiteFooter /> : null}
+      <MobileTabBar />
+      {/* top-left no dev: é o único canto sem nada clicável em nenhum viewport — top-right
+          colide com Entrar/Sair do header desktop, e qualquer canto inferior colide com a
+          barra de abas mobile nova (full-width). Só existe em dev, mas o Playwright roda
+          contra `npm run dev` (ver ARCHITECTURE.md), então a colisão quebrava cliques reais. */}
+      {import.meta.env.DEV && <TanStackRouterDevtools position="top-left" />}
     </div>
   );
 }

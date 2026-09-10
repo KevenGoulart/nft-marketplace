@@ -44,8 +44,8 @@ export function CatalogSearchInput({
         id="catalog-search-input"
         type="search"
         role="searchbox"
-        placeholder="Buscar NFTs ou coleções"
-        aria-label="Buscar NFTs ou coleções"
+        placeholder="Explorar coleções"
+        aria-label="Explorar coleções"
         value={draft}
         onChange={(event) => setDraft(event.target.value)}
         className="pl-9"

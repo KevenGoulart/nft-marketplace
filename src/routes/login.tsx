@@ -75,7 +75,6 @@ function LoginPage() {
                 type="email"
                 autoComplete="email"
                 aria-invalid={Boolean(errors.email)}
-                aria-describedby={errors.email ? "email-error" : undefined}
                 {...register("email")}
               />
             </FormField>
@@ -86,7 +85,6 @@ function LoginPage() {
                 type="password"
                 autoComplete="current-password"
                 aria-invalid={Boolean(errors.password)}
-                aria-describedby={errors.password ? "password-error" : undefined}
                 {...register("password")}
               />
             </FormField>

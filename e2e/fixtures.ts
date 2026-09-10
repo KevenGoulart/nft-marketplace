@@ -14,6 +14,17 @@ export async function login(page: Page, email = SEED_USER.email, password = SEED
   await page.waitForURL((url) => url.pathname === "/");
 }
 
+/**
+ * Linhas de item do carrinho — nunca `page.locator("ul li")` sozinho: o rodapé (§ figma
+ * fidelity pass) também renderiza `<ul><li>` para suas colunas de links, e como ele faz
+ * parte do layout estático (não depende dos dados do carrinho ainda carregarem), um
+ * `"ul li").first().waitFor()` genérico pode resolver no link do rodapé antes dos itens
+ * reais do carrinho existirem. Escopar pelo link para `/nft/` evita a ambiguidade.
+ */
+export function cartItemRows(page: Page) {
+  return page.locator('li:has(a[href^="/nft/"])');
+}
+
 
 export async function resetMock(page: Page) {
   await page.evaluate(() => fetch("/api/mock/reset", { method: "POST" }));

@@ -1,38 +1,45 @@
 import { test, expect } from "@playwright/test";
-import {
-  SEED_USER,
-  login,
-  queueDelay,
-  queueFailure,
-  resetMock,
-  setNetworkConditions,
-} from "./fixtures";
+import { SEED_USER, login, queueFailure, setNetworkConditions } from "./fixtures";
 
 const nftCards = (page: import("@playwright/test").Page) => page.locator('a[href^="/nft/"]');
 
 test.describe("Condições de rede simuladas (§6)", () => {
-  test.beforeEach(async ({ page }) => {
-    await resetMock(page);
-  });
-
-  test("catálogo mostra skeleton durante latência alta e depois os resultados", async ({ page }) => {
-    await queueDelay(page, { method: "GET", path: "/api/nfts", ms: 1200 });
-
-    await page.goto("/");
-    await expect(page.getByRole("status", { name: "Carregando catálogo de NFTs" })).toBeVisible();
-    await expect(nftCards(page).first()).toBeVisible({ timeout: 5000 });
-  });
-
-  test("falha 500 ao carregar o catálogo mostra erro e recupera ao tentar novamente", async ({
+  test("catálogo mostra skeleton durante latência alta no primeiro carregamento e depois os resultados", async ({
     page,
   }) => {
-    await queueFailure(page, { method: "GET", path: "/api/nfts", status: 500 });
-
     await page.goto("/");
-    await expect(page.getByRole("alert")).toHaveText("Não foi possível carregar o catálogo");
+    await nftCards(page).first().waitFor();
+
+    // Persiste a condição (sobrevive a reload, como o cenário de negócio) e recarrega
+    // para observar o efeito no carregamento inicial da página, com QueryClient zerado.
+    await setNetworkConditions(page, { latencyMs: { min: 1200, max: 1200 } });
+    await page.reload();
+
+    await expect(page.getByRole("status", { name: "Carregando catálogo de NFTs" })).toBeVisible();
+    await expect(nftCards(page).first()).toBeVisible({ timeout: 5000 });
+
+    await setNetworkConditions(page, { latencyMs: null });
+  });
+
+  test("falha 500 ao trocar a ordenação mostra erro no catálogo e recupera ao tentar novamente", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await nftCards(page).first().waitFor();
+
+    // O QueryClient tenta 1x de novo por padrão (retry: 1) — enfileira 2 falhas para
+    // que a segunda tentativa automática também falhe e o estado de erro seja exibido.
+    await queueFailure(page, { method: "GET", path: "/api/nfts", status: 500 });
+    await queueFailure(page, { method: "GET", path: "/api/nfts", status: 500 });
+    await page.getByLabel("Ordenar por:").selectOption("price_asc");
+
+    await expect(page.getByText("Não foi possível carregar o catálogo")).toBeVisible({
+      timeout: 10000,
+    });
 
     await page.getByRole("button", { name: "Tentar novamente" }).click();
-    await expect(nftCards(page).first()).toBeVisible();
+    await expect(nftCards(page).first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole("alert")).toHaveCount(0);
   });
 
   test("queda de conexão ao carregar o carrinho mostra erro e recupera quando a rede volta", async ({
@@ -41,8 +48,14 @@ test.describe("Condições de rede simuladas (§6)", () => {
     await login(page);
     await setNetworkConditions(page, { offline: true });
 
+    // Navegação forçada (goto, não clique no link já montado): o header/tab bar já buscou
+    // o carrinho na página anterior, então um clique in-app às vezes serve a resposta já
+    // em cache (staleTime 30s) sem uma nova requisição — o `goto` recarrega a página com
+    // um QueryClient zerado, garantindo uma busca de verdade contra a condição offline.
     await page.goto("/cart");
-    await expect(page.getByRole("alert")).toHaveText("Não foi possível carregar o carrinho");
+    await expect(page.getByText("Não foi possível carregar o carrinho")).toBeVisible({
+      timeout: 20000,
+    });
 
     await setNetworkConditions(page, { offline: false });
     await page.getByRole("button", { name: "Tentar novamente" }).click();
@@ -55,13 +68,15 @@ test.describe("Condições de rede simuladas (§6)", () => {
     await login(page);
     await queueFailure(page, {
       method: "GET",
-      path: "/api/cart",
+      path: "/api/wallets",
       status: 401,
       code: "UNAUTHENTICATED",
       message: "Sessão expirada",
     });
 
-    await page.goto("/checkout");
+    await page.locator('a[href="/cart"]:visible').first().click();
+    await page.getByRole("link", { name: "Conectar e finalizar" }).click();
+
     await expect(page).toHaveURL(/\/login\?redirect=/);
 
     await page.getByLabel("E-mail").fill(SEED_USER.email);

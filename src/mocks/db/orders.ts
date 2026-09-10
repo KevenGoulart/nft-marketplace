@@ -49,45 +49,65 @@ function findUserWallet(userId: string, walletId: string) {
   return null;
 }
 
-function scheduleResolution(order: OrderRecord) {
-  setTimeout(() => {
-    const current = db.orders.get(order.id);
-    if (!current || current.status !== "pending") return;
+const RESOLUTION_DELAY_MS = 2500;
 
-    if (getActiveScenario() === "payment_refused") {
-      current.status = "refused";
-      current.refusalReason = "Pagamento recusado pela rede simulada. Tente novamente.";
-      current.version += 1;
-      current.updatedAt = nowIso();
-      persistDb();
-      notify(current);
-      return;
-    }
-
-    current.transactionRef = newId("tx").replace("tx-", "0x");
-    current.explorerUrl = `https://explorer.kurio.mock/tx/${current.transactionRef}`;
-    current.status = "confirmed";
-
-    const cart = getCartForUser(current.userId);
-    for (const line of current.quoteSnapshot.items) {
-      const item = cart.items.find((entry) => entry.nftId === line.nftId);
-      if (!item) continue;
-      if (item.quantity <= line.quantity) {
-        removeCartItem(cart, item.id);
-      } else {
-        item.quantity -= line.quantity;
-      }
-    }
-
-    for (const line of current.quoteSnapshot.items) {
-      decrementEditions(line.nftId, line.quantity);
-    }
-
+function resolveOrder(current: OrderRecord) {
+  if (getActiveScenario() === "payment_refused") {
+    current.status = "refused";
+    current.refusalReason = "Pagamento recusado pela rede simulada. Tente novamente.";
     current.version += 1;
     current.updatedAt = nowIso();
     persistDb();
     notify(current);
-  }, 2500);
+    return;
+  }
+
+  current.transactionRef = newId("tx").replace("tx-", "0x");
+  current.explorerUrl = `https://explorer.kurio.mock/tx/${current.transactionRef}`;
+  current.status = "confirmed";
+
+  const cart = getCartForUser(current.userId);
+  for (const line of current.quoteSnapshot.items) {
+    const item = cart.items.find((entry) => entry.nftId === line.nftId);
+    if (!item) continue;
+    if (item.quantity <= line.quantity) {
+      removeCartItem(cart, item.id);
+    } else {
+      item.quantity -= line.quantity;
+    }
+  }
+
+  for (const line of current.quoteSnapshot.items) {
+    decrementEditions(line.nftId, line.quantity);
+  }
+
+  current.version += 1;
+  current.updatedAt = nowIso();
+  persistDb();
+  notify(current);
+}
+
+/**
+ * O mock roda inteiramente na aba do navegador — um `setTimeout` de resolução
+ * morre junto com a página se ela recarregar enquanto o pedido está pendente.
+ * Por isso `getOrder` chama isto antes de responder: se já passou tempo
+ * suficiente desde a criação e o pedido ainda está "pending" (o timer original
+ * nunca disparou), resolve agora mesmo, de forma preguiçosa, em vez de deixar o
+ * pedido pendente para sempre depois de um refresh (§7 — recuperação após reload).
+ */
+function resolveOrderIfDue(current: OrderRecord) {
+  if (current.status !== "pending") return;
+  const elapsed = Date.now() - new Date(current.createdAt).getTime();
+  if (elapsed < RESOLUTION_DELAY_MS) return;
+  resolveOrder(current);
+}
+
+function scheduleResolution(order: OrderRecord) {
+  setTimeout(() => {
+    const current = db.orders.get(order.id);
+    if (!current || current.status !== "pending") return;
+    resolveOrder(current);
+  }, RESOLUTION_DELAY_MS);
 }
 
 export function createOrder(
@@ -152,5 +172,6 @@ export function getOrder(userId: string, orderId: string): Order {
   if (!order || order.userId !== userId) {
     throw new NotFoundError("Pedido não encontrado");
   }
+  resolveOrderIfDue(order);
   return toOrderResponse(order);
 }

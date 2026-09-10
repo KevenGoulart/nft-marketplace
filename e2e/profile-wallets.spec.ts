@@ -29,6 +29,33 @@ test.describe("Perfil e carteiras", () => {
     await expect(page.getByRole("link", { name: SEED_USER.name })).toBeVisible();
   });
 
+  test("e-mail já usado por outro colecionador mostra conflito ao editar o perfil", async ({
+    page,
+  }) => {
+    await login(page);
+    await page.goto("/account/profile");
+
+    await page.getByLabel("E-mail").fill("bruno@kurio.test");
+    await page.getByRole("button", { name: "Salvar" }).first().click();
+
+    await expect(
+      page.getByText("Este e-mail já está sendo usado por outra conta").first()
+    ).toBeVisible();
+  });
+
+  test("endereço de carteira inválido mostra erro de validação e não salva", async ({ page }) => {
+    await login(page);
+    await page.goto("/account/wallets");
+
+    await page.getByRole("button", { name: "Adicionar" }).click();
+    await page.getByLabel("Nome da carteira").fill("Carteira inválida");
+    await page.getByLabel("Endereço da carteira").fill("0x123");
+    await page.getByRole("button", { name: "Salvar carteira" }).click();
+
+    await expect(page.getByText("Endereço de carteira inválido")).toBeVisible();
+    await expect(page.getByText("Carteira inválida")).toHaveCount(0);
+  });
+
   test("cadastrar carteira secundária e editá-la", async ({ page }) => {
     await login(page);
     await page.goto("/account/wallets");

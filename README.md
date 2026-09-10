@@ -53,6 +53,45 @@ fetch("/api/mock/scenario", {
 
 (Esses dois endpoints são utilitários do mock, fora dos contratos de produto — ver `ARCHITECTURE.md`.)
 
+### Reproduzindo fluxos de falha (§6)
+
+Também no console do navegador, com a página carregada (os endpoints abaixo só respondem depois que o Service Worker do MSW assumiu o controle da página — se disparar `fetch` logo após o `load`, ele pode vazar para a rede real e devolver 404):
+
+```js
+// Lentidão geral (sobrevive a reload — recarregue a página depois para ver o efeito no 1º carregamento)
+fetch("/api/mock/network", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ latencyMs: { min: 800, max: 2000 } }),
+});
+
+// Indisponibilidade de conexão (todo /api/* falha com erro de rede até desligar de novo)
+fetch("/api/mock/network", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ offline: true }),
+});
+
+// Falha HTTP pontual na próxima requisição que casar method+path (ex.: 500 no catálogo)
+fetch("/api/mock/network/fail-next", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ method: "GET", path: "/api/nfts", status: 500 }),
+});
+
+// Timeout simulado após a criação do pedido, com recuperação pela Idempotency-Key (§7)
+fetch("/api/mock/network/drop-next", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ method: "POST", path: "/api/orders" }),
+});
+
+// Desliga tudo (equivalente a POST /mock/reset, que também limpa isso)
+fetch("/api/mock/network/reset", { method: "POST" });
+```
+
+Cupom inválido: qualquer código que não seja `BEMVINDO10`. Cupom expirado: `EXPIRADA5`. Preço alterado/edição esgotada durante a compra: `fetch("/api/mock/nfts/nft-1/simulate-update", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({priceEth: "9.99"})})` com o item já no carrinho/checkout aberto em outra aba.
+
 ## Scripts disponíveis
 
 ```bash
@@ -70,7 +109,9 @@ npm run lighthouse   # audita performance/acessibilidade/SEO com Lighthouse
 
 ## Testes (Playwright)
 
-`npm run test:e2e` sobe o próprio servidor de dev automaticamente (não precisa rodar `npm run dev` antes) e roda 25 testes cobrindo autenticação, catálogo, NFT detalhe + carrinho, checkout (incluindo o cenário de pagamento recusado), perfil/carteiras, o menu mobile do header e uma regressão automatizada de acessibilidade (`axe-core`). Relatório HTML em `e2e/playwright-report/` após a execução.
+`npm run test:e2e` sobe o próprio servidor de dev automaticamente (não precisa rodar `npm run dev` antes) e roda 62 testes cobrindo autenticação (login/cadastro/logout, conflito de e-mail, troca de usuário e isolamento de dados), catálogo (busca/filtro/ordenação/paginação, filtros combinados, sobrevivência a refresh e restauração pelo histórico), NFT detalhe + carrinho (acesso direto/404, favoritos incl. falha e recuperação, cupom, persistência do carrinho de visitante), checkout (compra confirmada/recusada, clique repetido, timeout com recuperação por idempotência, retomada de pedido pendente), tempo real via Socket.IO (mudança de preço durante checkout, eventos duplicados/antigos), condições de rede simuladas (§6: latência, falha HTTP, queda de conexão, sessão expirada), perfil/carteiras (incl. validação e conflito), navegação por teclado, a barra de abas mobile, regressão de acessibilidade (`axe-core`) e regressão visual (início/detalhe/carrinho/pagamento em 390/768/1440px, baselines versionadas). Relatório HTML em `e2e/playwright-report/` após a execução.
+
+Para atualizar as baselines de regressão visual de propósito (mudança visual intencional): `npx playwright test e2e/visual-regression.spec.ts --project=chromium --update-snapshots`.
 
 Detalhes de armadilhas e decisões (por que os testes usam contagens relativas, como o cenário de mock é trocado via HTTP, etc.) estão documentados na seção "Testes (Playwright)" de `ARCHITECTURE.md`.
 

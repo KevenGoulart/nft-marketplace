@@ -57,6 +57,44 @@ function NftNotFound() {
   );
 }
 
+/**
+ * Links reais de compartilhamento (intents públicos de e-mail/X/LinkedIn, sem API key
+ * nem integração própria) — diferente dos ícones decorativos do rodapé (que implicariam
+ * perfis sociais da Kurio que não existem), aqui a ação é genuína e funciona de verdade.
+ */
+function ShareLinks({ title }: { title: string }) {
+  const url = typeof window !== "undefined" ? window.location.href : "";
+  const text = `Confira ${title} na Kurio`;
+
+  return (
+    <div className="flex items-center gap-3 text-[15px] text-tertiary">
+      <span>Compartilhar este NFT:</span>
+      <a
+        href={`mailto:?subject=${encodeURIComponent(text)}&body=${encodeURIComponent(url)}`}
+        className="underline underline-offset-4 hover:text-accent"
+      >
+        E-mail
+      </a>
+      <a
+        href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`}
+        target="_blank"
+        rel="noreferrer"
+        className="underline underline-offset-4 hover:text-accent"
+      >
+        X
+      </a>
+      <a
+        href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`}
+        target="_blank"
+        rel="noreferrer"
+        className="underline underline-offset-4 hover:text-accent"
+      >
+        LinkedIn
+      </a>
+    </div>
+  );
+}
+
 function NftLoadError({ onRetry }: { onRetry: () => void }) {
   return (
     <div role="alert" className="flex flex-col items-center gap-3 py-24 text-center">
@@ -193,6 +231,8 @@ function NftDetailPage() {
             <p>Coleção: {nft.collection}</p>
             <p>Atributos: {nft.attributes.map((a) => a.value).join(", ")}</p>
           </div>
+
+          <ShareLinks title={nft.title} />
         </div>
       </div>
 

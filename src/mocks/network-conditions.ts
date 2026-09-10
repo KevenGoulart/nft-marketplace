@@ -36,12 +36,47 @@ function initialState(): NetworkConditionsState {
 
 let state: NetworkConditionsState = initialState();
 
+const STORAGE_KEY = "kurio.mock.network";
+
+type PersistedConditions = Pick<NetworkConditionsState, "latencyMs" | "offline">;
+
+function persist() {
+  if (typeof window === "undefined") return;
+  const persisted: PersistedConditions = { latencyMs: state.latencyMs, offline: state.offline };
+  if (persisted.latencyMs === null && persisted.offline === false) {
+    window.localStorage.removeItem(STORAGE_KEY);
+    return;
+  }
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(persisted));
+}
+
+/**
+ * `latencyMs`/`offline` (condições persistentes de "site lento"/"sem conexão")
+ * sobrevivem a reload, igual ao cenário de negócio em `scenarios.ts` — só assim é
+ * possível ligar a condição, navegar/recarregar e observar o efeito no carregamento
+ * inicial da página. As filas de uso único (`failNext`/`delayNext`/`dropResponseOnce`)
+ * são deliberadamente efêmeras: existem só para a próxima requisição dentro do mesmo
+ * carregamento de página em que foram enfileiradas.
+ */
+export function loadPersistedNetworkConditions() {
+  if (typeof window === "undefined") return;
+  const raw = window.localStorage.getItem(STORAGE_KEY);
+  if (!raw) return;
+  try {
+    const parsed = JSON.parse(raw) as PersistedConditions;
+    state = { ...state, latencyMs: parsed.latencyMs ?? null, offline: parsed.offline ?? false };
+  } catch {
+    window.localStorage.removeItem(STORAGE_KEY);
+  }
+}
+
 export function getNetworkConditions(): Readonly<NetworkConditionsState> {
   return state;
 }
 
 export function setNetworkConditions(patch: { latencyMs?: LatencyRange | null; offline?: boolean }) {
   state = { ...state, ...patch };
+  persist();
 }
 
 export function queueFailure(failure: QueuedFailure) {
@@ -58,6 +93,9 @@ export function queueDroppedResponse(entry: QueuedDrop) {
 
 export function resetNetworkConditions() {
   state = initialState();
+  if (typeof window !== "undefined") {
+    window.localStorage.removeItem(STORAGE_KEY);
+  }
 }
 
 export function consumeMatchingFailure(method: string, pathname: string): QueuedFailure | null {
