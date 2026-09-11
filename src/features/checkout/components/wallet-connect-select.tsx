@@ -1,11 +1,8 @@
 import { useEffect, useState } from "react";
-import type { Wallet, WalletsResponse, WalletType } from "@/api/contracts/wallets";
+import type { Wallet, WalletsResponse } from "@/api/contracts/wallets";
 import { NETWORK_LABELS } from "@/lib/networks";
-import { WALLET_TYPE_LABELS } from "@/lib/wallet-types";
 import { cn } from "@/lib/utils";
 import { WalletForm } from "@/features/wallets/components/wallet-form";
-
-const WALLET_TYPE_ORDER: WalletType[] = ["walletconnect", "metamask", "coinbase"];
 
 function truncateAddress(address: string) {
   if (address.length <= 12) return address;
@@ -114,40 +111,6 @@ export function WalletConnectSelect({
         >
           Cadastrar outra carteira
         </button>
-      </div>
-
-      <div className="flex flex-col gap-4">
-        <p className="text-[16px] font-bold text-foreground">Carteira e rede</p>
-        <div className="flex flex-col gap-3">
-          {WALLET_TYPE_ORDER.map((type) => {
-            const active = selected?.walletType === type;
-            return (
-              <div
-                key={type}
-                className={cn(
-                  "flex items-center gap-3 rounded-2xl border bg-card px-4 py-3 text-[15px] text-foreground",
-                  active ? "border-primary" : "border-border"
-                )}
-              >
-                <span
-                  aria-hidden
-                  className="flex size-9 shrink-0 items-center justify-center rounded-full bg-secondary text-sm font-bold text-accent"
-                >
-                  {WALLET_TYPE_LABELS[type][0]}
-                </span>
-                <span className="flex-1 truncate">{WALLET_TYPE_LABELS[type]}</span>
-                <span
-                  aria-hidden
-                  className={cn(
-                    "size-4 shrink-0 rounded-full border",
-                    active ? "border-primary bg-primary" : "border-border-soft"
-                  )}
-                />
-                {active ? <span className="sr-only">Rede da carteira selecionada</span> : null}
-              </div>
-            );
-          })}
-        </div>
       </div>
     </div>
   );
