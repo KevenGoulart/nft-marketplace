@@ -9,15 +9,13 @@ async function addNftToCartAndGoToCheckout(page: import("@playwright/test").Page
 }
 
 test.describe("Checkout", () => {
-  test("compra confirmada: preenche documento, conecta carteira e recebe confirmação", async ({
+  test("compra confirmada: preenche documento e recebe confirmação com carteira selecionada", async ({
     page,
   }) => {
     await login(page);
     await addNftToCartAndGoToCheckout(page);
 
     await page.getByLabel("Documento (CPF/ID)").fill("12345678900");
-    await page.getByRole("button", { name: "Conectar" }).click();
-    await expect(page.getByText(/Conectado a/)).toBeVisible({ timeout: 3000 });
 
     await page.getByRole("button", { name: "Confirmar compra" }).click();
 
@@ -34,8 +32,6 @@ test.describe("Checkout", () => {
     await addNftToCartAndGoToCheckout(page);
 
     await page.getByLabel("Documento (CPF/ID)").fill("12345678900");
-    await page.getByRole("button", { name: "Conectar" }).click();
-    await expect(page.getByText(/Conectado a/)).toBeVisible({ timeout: 3000 });
     await page.getByRole("button", { name: "Confirmar compra" }).click();
 
     await expect(page.getByText("Pagamento recusado", { exact: true })).toBeVisible({
@@ -48,8 +44,8 @@ test.describe("Checkout", () => {
     await expect(page.locator('a[href="/nft/nft-1"]').first()).toBeVisible();
   });
 
-  test("confirmar sem conectar carteira mostra erro e não avança", async ({ page }) => {
-    await login(page);
+  test("confirmar sem carteira cadastrada mostra erro e não avança", async ({ page }) => {
+    await login(page, "bruno@kurio.test");
     await addNftToCartAndGoToCheckout(page);
 
     await page.getByLabel("Documento (CPF/ID)").fill("12345678900");

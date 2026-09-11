@@ -105,9 +105,8 @@ export function buildNftSeed(): NftRecord[] {
     const hadPriceDrop = i % 7 === 0 && i > 0;
     const previousPriceEth = hadPriceDrop ? String(round2(price * 1.22)) : null;
 
-    const soldOut = i % 9 === 8;
     const editionsTotal = [1, 5, 10, 20][i % 4];
-    const editionsAvailable = soldOut ? 0 : editionsTotal;
+    const editionsAvailable = editionsTotal;
 
     const rating = round2(3.6 + ((i * 0.37) % 1.4));
     const reviewCount = 4 + ((i * 13) % 57);

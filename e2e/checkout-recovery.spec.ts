@@ -7,8 +7,6 @@ async function addNftToCartAndGoToCheckout(page: import("@playwright/test").Page
   await expect(page.getByRole("button", { name: "Adicionado ✓" })).toBeVisible();
   await page.goto("/checkout");
   await page.getByLabel("Documento (CPF/ID)").fill("12345678900");
-  await page.getByRole("button", { name: "Conectar" }).click();
-  await expect(page.getByText(/Conectado a/)).toBeVisible({ timeout: 3000 });
 }
 
 test.describe("Recuperação do checkout (§7)", () => {

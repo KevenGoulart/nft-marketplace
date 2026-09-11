@@ -176,7 +176,6 @@ function CheckoutPage() {
             <WalletConnectSelect
               wallets={walletsQuery.data}
               onConnectedChange={setConnectedWallet}
-              simplified
             />
           ) : null}
 
