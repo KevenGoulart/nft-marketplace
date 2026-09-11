@@ -2,7 +2,7 @@ export function CatalogHero() {
   return (
     <section
       aria-label="Destaque"
-      className="relative overflow-hidden rounded-2xl bg-secondary px-6 py-10 sm:px-10"
+      className="relative overflow-hidden rounded-2xl px-6 py-10 sm:px-10"
     >
       <div className="flex flex-col items-start gap-8 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex max-w-xl flex-col items-start gap-8">
@@ -25,6 +25,12 @@ export function CatalogHero() {
           >
             EXPLORAR
           </a>
+
+          <div className="flex items-center gap-2 self-start lg:self-end" aria-hidden="true">
+            <span className="size-2 rounded-full bg-primary/40" />
+            <span className="size-2 rounded-full bg-primary/40" />
+            <span className="size-2 rounded-full bg-primary" />
+          </div>
         </div>
 
         <div className="relative size-[280px] shrink-0 overflow-hidden rounded-3xl sm:size-[360px] lg:size-[450px]">
@@ -35,13 +41,6 @@ export function CatalogHero() {
             fetchPriority="high"
             width={450}
             height={450}
-          />
-          <img
-            src="/mock-assets/hero/hero-avatar.webp"
-            alt=""
-            className="absolute bottom-[10%] left-[9%] size-[27%] rounded-lg object-cover shadow-lg"
-            width={120}
-            height={120}
           />
         </div>
       </div>

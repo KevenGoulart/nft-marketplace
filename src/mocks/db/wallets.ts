@@ -19,6 +19,9 @@ export function upsertWallet(
     address: input.address,
     network: input.network,
     label: input.label,
+    walletType: input.walletType,
+    referralCode: input.referralCode,
+    secondaryReference: input.secondaryReference ?? null,
     connectedAt: current[slot]?.connectedAt ?? nowIso(),
   };
   current[slot] = wallet;

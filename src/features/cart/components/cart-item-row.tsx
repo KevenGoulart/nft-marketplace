@@ -4,10 +4,8 @@ import type { QuoteLineItem } from "@/api/contracts/quote";
 import { formatEth } from "@/lib/eth";
 import { QuantityStepper } from "@/features/nft-detail/components/quantity-stepper";
 
-function editionsLabel(editionsAvailable: number) {
-  if (editionsAvailable <= 0) return "Esgotado";
-  if (editionsAvailable === 1) return "Última edição disponível";
-  return `${editionsAvailable} edições disponíveis`;
+function formatTokenId(nftId: string) {
+  return `ID do token: #${nftId.replace("nft-", "").padStart(4, "0")}`;
 }
 
 export function CartItemRow({
@@ -42,7 +40,7 @@ export function CartItemRow({
           />
           <span className="flex flex-col gap-1.5">
             <span className="font-bold text-foreground">{item.title}</span>
-            <span className="text-sm text-tertiary">{editionsLabel(item.editionsAvailable)}</span>
+            <span className="text-sm text-tertiary">{formatTokenId(item.nftId)}</span>
           </span>
         </Link>
         <span className="w-[77px] text-center font-bold text-tertiary">
@@ -65,7 +63,7 @@ export function CartItemRow({
           aria-label={`Remover ${item.title} do carrinho`}
           disabled={disabled}
           onClick={onRemove}
-          className="text-foreground/80 hover:text-destructive disabled:pointer-events-none disabled:opacity-40"
+          className="cursor-pointer text-secondary-foreground hover:text-destructive disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-40"
         >
           <Trash2 className="size-6" aria-hidden />
         </button>
@@ -93,9 +91,7 @@ export function CartItemRow({
           >
             {item.title}
           </Link>
-          <p className="text-sm text-tertiary">
-            {editionsLabel(item.editionsAvailable)}
-          </p>
+          <p className="text-sm text-tertiary">{formatTokenId(item.nftId)}</p>
           <div className="flex items-center justify-between">
             <span className="text-lg font-bold text-accent">{formatEth(item.unitPriceEth)}</span>
             <QuantityStepper
@@ -112,7 +108,7 @@ export function CartItemRow({
           aria-label={`Remover ${item.title} do carrinho`}
           disabled={disabled}
           onClick={onRemove}
-          className="absolute right-3 top-3 text-foreground/80 hover:text-destructive disabled:pointer-events-none disabled:opacity-40"
+          className="absolute right-3 top-3 cursor-pointer text-secondary-foreground hover:text-destructive disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-40"
         >
           <Trash2 className="size-5" aria-hidden />
         </button>

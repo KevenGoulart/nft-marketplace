@@ -1,7 +1,10 @@
 import { test, expect } from "@playwright/test";
 import { SEED_USER, login, queueFailure, setNetworkConditions } from "./fixtures";
 
-const nftCards = (page: import("@playwright/test").Page) => page.locator('a[href^="/nft/"]');
+// Escopado a #catalog-results: a sidebar também tem 1 link para /nft/:id no card
+// "NFT em destaque".
+const nftCards = (page: import("@playwright/test").Page) =>
+  page.locator('#catalog-results a[href^="/nft/"]');
 
 test.describe("Condições de rede simuladas (§6)", () => {
   test("catálogo mostra skeleton durante latência alta no primeiro carregamento e depois os resultados", async ({

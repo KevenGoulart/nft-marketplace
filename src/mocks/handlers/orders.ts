@@ -32,9 +32,6 @@ export const orderHandlers = [
 
       const order = createOrder(user.id, idempotencyKey, parsed.data);
 
-      // Utilitário de teste: simula um timeout de rede depois que o pedido já foi
-      // criado no lado do "servidor" — o cliente nunca recebe esta resposta, mas o
-      // pedido existe e a mesma Idempotency-Key recupera-o num reenvio (§7).
       const url = new URL(request.url);
       if (consumeDroppedResponse("POST", url.pathname)) {
         return HttpResponse.error();

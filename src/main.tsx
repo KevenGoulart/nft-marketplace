@@ -26,10 +26,6 @@ async function bootstrap() {
     <StrictMode>
       <QueryClientProvider client={queryClient}>
         <RouterProvider router={router} />
-        {/* top-left no dev, mesmo canto do Router Devtools — ver __root.tsx para o porquê
-            (único canto sem elemento clicável real em nenhum viewport). Os dois botões
-            flutuantes se sobrepõem visualmente em dev; não afeta build de produção nem
-            testes, já que nenhum teste clica nos próprios botões de devtools. */}
         {import.meta.env.DEV && (
           <ReactQueryDevtools initialIsOpen={false} buttonPosition="top-left" />
         )}

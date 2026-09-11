@@ -48,7 +48,7 @@ export function useToggleFavoriteMutation(nftId: string) {
       queryClient.setQueriesData<Paginated<NftSummary>>(
         { queryKey: ["nfts"] },
         (current) =>
-          current
+          current && Array.isArray(current.items)
             ? {
                 ...current,
                 items: current.items.map((item) =>

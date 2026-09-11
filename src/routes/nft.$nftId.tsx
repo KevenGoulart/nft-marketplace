@@ -1,18 +1,36 @@
 import { useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Heart } from "lucide-react";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { Briefcase, Heart, Mail, MessageCircle } from "lucide-react";
 import { queryClient } from "@/app/query-client";
 import { ApiRequestError } from "@/api/contracts/common";
+import type { NftDetail } from "@/api/contracts/nft";
 import { useSession } from "@/features/auth";
 import { nftDetailQueryOptions, useNftDetailQuery, useToggleFavoriteMutation } from "@/features/nft-detail/queries";
 import { NftGallery } from "@/features/nft-detail/components/gallery";
+import { MobileNftDetail } from "@/features/nft-detail/components/mobile-detail";
 import { QuantityStepper } from "@/features/nft-detail/components/quantity-stepper";
 import { RelatedProducts } from "@/features/nft-detail/components/related-products";
+import { StarRating } from "@/features/nft-detail/components/star-rating";
 import { useAddCartItemMutation } from "@/features/cart/queries";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatEth } from "@/lib/eth";
+import { NETWORK_LABELS } from "@/lib/networks";
 import { cn } from "@/lib/utils";
+
+function fakeContractRef(nftId: string) {
+  let hash = 0;
+  for (const char of nftId) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  const hex = hash.toString(16).padStart(8, "0").toUpperCase();
+  return `0x${hex.slice(0, 4)}...${hex.slice(-4)}`;
+}
+
+function buildLongDescription(nft: NftDetail) {
+  return [
+    `${nft.title} é uma obra digital 1/${nft.editionsTotal} da coleção ${nft.collection}, verificada na ${NETWORK_LABELS[nft.network]}. Cada atributo fica armazenado nos metadados do token, e a peça explora identidade, movimento e luz em um mundo digital sem fronteiras.`,
+    `A propriedade inclui a arte em alta resolução, lançamentos exclusivos para colecionadores e um registro permanente de procedência registrada na rede. ${nft.creator.name} recebe 5% de direitos autorais nas vendas secundárias, apoiando novos trabalhos e lançamentos da comunidade.`,
+  ];
+}
 
 export const Route = createFileRoute("/nft/$nftId")({
   loader: ({ params }) => {
@@ -57,39 +75,37 @@ function NftNotFound() {
   );
 }
 
-/**
- * Links reais de compartilhamento (intents públicos de e-mail/X/LinkedIn, sem API key
- * nem integração própria) — diferente dos ícones decorativos do rodapé (que implicariam
- * perfis sociais da Kurio que não existem), aqui a ação é genuína e funciona de verdade.
- */
 function ShareLinks({ title }: { title: string }) {
   const url = typeof window !== "undefined" ? window.location.href : "";
   const text = `Confira ${title} na Kurio`;
 
   return (
-    <div className="flex items-center gap-3 text-[15px] text-tertiary">
+    <div className="flex items-center gap-3 text-[15px] text-foreground">
       <span>Compartilhar este NFT:</span>
       <a
         href={`mailto:?subject=${encodeURIComponent(text)}&body=${encodeURIComponent(url)}`}
-        className="underline underline-offset-4 hover:text-accent"
+        aria-label="Compartilhar por e-mail"
+        className="hover:text-accent"
       >
-        E-mail
+        <Mail className="size-4" aria-hidden />
       </a>
       <a
         href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`}
         target="_blank"
         rel="noreferrer"
-        className="underline underline-offset-4 hover:text-accent"
+        aria-label="Compartilhar no X"
+        className="hover:text-accent"
       >
-        X
+        <MessageCircle className="size-4" aria-hidden />
       </a>
       <a
         href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`}
         target="_blank"
         rel="noreferrer"
-        className="underline underline-offset-4 hover:text-accent"
+        aria-label="Compartilhar no LinkedIn"
+        className="hover:text-accent"
       >
-        LinkedIn
+        <Briefcase className="size-4" aria-hidden />
       </a>
     </div>
   );
@@ -114,6 +130,7 @@ function NftLoadError({ onRetry }: { onRetry: () => void }) {
 function NftDetailPage() {
   const { nftId } = Route.useParams();
   const navigate = Route.useNavigate();
+  const router = useRouter();
   const query = useNftDetailQuery(nftId);
   const { isAuthenticated } = useSession();
   const toggleFavorite = useToggleFavoriteMutation(nftId);
@@ -144,9 +161,9 @@ function NftDetailPage() {
 
   return (
     <div className="flex flex-col gap-10">
-      <p className="text-sm text-muted-foreground">Início / {nft.collection}</p>
+      <p className="hidden text-sm text-foreground md:block">Início / {nft.collection}</p>
 
-      <div className="flex flex-col gap-8 lg:flex-row lg:gap-8">
+      <div className="hidden flex-col gap-8 md:flex lg:flex-row lg:gap-8">
         <NftGallery images={nft.gallery} title={nft.title} />
 
         <div className="flex flex-1 flex-col gap-6">
@@ -154,15 +171,18 @@ function NftDetailPage() {
             <h1 className="text-2xl font-bold text-foreground sm:text-[28px]">
               {nft.title}
             </h1>
-            <div className="flex items-baseline gap-3">
-              <span className="text-xl font-bold text-accent sm:text-[22px]">
-                {formatEth(nft.priceEth)}
-              </span>
-              {nft.previousPriceEth ? (
-                <span className="text-base text-muted-foreground line-through">
-                  {formatEth(nft.previousPriceEth)}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-baseline gap-3">
+                <span className="text-xl font-bold text-accent sm:text-[22px]">
+                  {formatEth(nft.priceEth)}
                 </span>
-              ) : null}
+                {nft.previousPriceEth ? (
+                  <span className="text-base text-muted-foreground line-through">
+                    {formatEth(nft.previousPriceEth)}
+                  </span>
+                ) : null}
+              </div>
+              <StarRating rating={nft.rating} reviewCount={nft.reviewCount} />
             </div>
           </div>
 
@@ -206,6 +226,7 @@ function NftDetailPage() {
               <Button
                 disabled={soldOut || addToCart.isPending}
                 onClick={() => addToCart.mutate({ nftId, quantity })}
+                className="rounded-sm px-8"
               >
                 {addToCart.isSuccess ? "Adicionado ✓" : "COMPRAR"}
               </Button>
@@ -214,7 +235,7 @@ function NftDetailPage() {
                 aria-pressed={nft.isFavorite}
                 disabled={toggleFavorite.isPending}
                 onClick={handleFavoriteClick}
-                className="gap-2"
+                className="gap-2 rounded-sm border-border-soft text-secondary-foreground"
               >
                 <Heart
                   className="size-4"
@@ -236,18 +257,58 @@ function NftDetailPage() {
         </div>
       </div>
 
-      <section className="flex flex-col gap-3 border-t border-border pt-8">
-        <h2 className="text-base font-bold text-foreground">Detalhes do NFT</h2>
-        <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
-          <div>
-            <dt className="text-muted-foreground">Rede</dt>
-            <dd className="capitalize text-foreground">{nft.network}</dd>
+      <MobileNftDetail
+        nft={nft}
+        soldOut={soldOut}
+        quantity={quantity}
+        onQuantityChange={setQuantity}
+        onBack={() => router.history.back()}
+        onToggleFavorite={handleFavoriteClick}
+        favoritePending={toggleFavorite.isPending}
+        onAddToCart={() => addToCart.mutate({ nftId, quantity })}
+        addToCartPending={addToCart.isPending}
+        addToCartSuccess={addToCart.isSuccess}
+      />
+
+      <section className="flex flex-col gap-6">
+        <div className="flex items-start gap-8 border-b border-border">
+          <div className="flex flex-col gap-3">
+            <h2 className="text-[17px] font-bold text-accent">Detalhes do NFT</h2>
+            <div className="h-0.5 bg-accent" />
           </div>
-          <div>
-            <dt className="text-muted-foreground">Criador</dt>
-            <dd className="text-foreground">{nft.creator.name}</dd>
-          </div>
-        </dl>
+          <span aria-disabled="true" className="text-[17px] text-foreground">
+            Avaliações de colecionadores ({nft.reviewCount})
+          </span>
+        </div>
+
+        <div className="flex flex-col gap-3 text-sm leading-6 text-secondary-foreground">
+          {buildLongDescription(nft).map((paragraph) => (
+            <p key={paragraph}>{paragraph}</p>
+          ))}
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-bold text-foreground">Rede:</p>
+          <p className="text-sm text-secondary-foreground">
+            Cunhado na {NETWORK_LABELS[nft.network]} com procedência imutável e metadados
+            armazenados no IPFS.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-bold text-foreground">Contrato:</p>
+          <p className="text-sm text-secondary-foreground">
+            {fakeContractRef(nft.id)} • Contrato inteligente ERC-721 verificado.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-bold text-foreground">Direitos autorais:</p>
+          <p className="text-sm text-secondary-foreground">
+            Direitos autorais do criador: 5% nas vendas secundárias, pagos automaticamente
+            pelos mercados compatíveis.
+          </p>
+        </div>
       </section>
 
       <RelatedProducts collection={nft.collection} excludeNftId={nftId} />

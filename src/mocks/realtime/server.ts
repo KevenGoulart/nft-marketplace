@@ -24,12 +24,6 @@ export function disconnectAllRealtimeClients() {
   }
 }
 
-/**
- * Emite um `nft.updated` "cru" (sem passar pelo mock-db/versionamento normal),
- * exclusivamente para os testes de tolerância a duplicata/evento antigo (§7):
- * exercita o mesmo caminho real de transporte (socket.io-client), só que com um
- * payload de versão controlada pelo teste em vez de derivada de uma mudança real.
- */
 export function broadcastRawNftUpdate(event: NftUpdatedEvent) {
   for (const connection of connections) {
     connection.io.client.emit("nft.updated", event);

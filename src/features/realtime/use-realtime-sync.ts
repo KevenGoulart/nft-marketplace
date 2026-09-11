@@ -32,7 +32,7 @@ export function useRealtimeSync() {
       queryClient.setQueriesData<Paginated<NftSummary>>(
         { queryKey: ["nfts"] },
         (current) => {
-          if (!current) return current;
+          if (!current || !Array.isArray(current.items)) return current;
           let changed = false;
           const items = current.items.map((item) => {
             if (item.id !== event.nftId || event.version <= item.version) return item;

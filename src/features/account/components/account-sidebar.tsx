@@ -65,7 +65,7 @@ export function AccountSidebar({ active }: { active: "profile" | "wallets" }) {
         type="button"
         disabled={logout.isPending}
         onClick={() => logout.mutate(undefined, { onSettled: () => navigate({ to: "/" }) })}
-        className="flex w-full items-center gap-2 px-4 py-2.5 text-[15px] font-bold text-accent"
+        className="flex w-full cursor-pointer items-center gap-2 px-4 py-2.5 text-[15px] font-bold text-accent disabled:cursor-not-allowed"
       >
         <LogOut className="size-5" aria-hidden />
         Sair

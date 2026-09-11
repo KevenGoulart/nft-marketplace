@@ -29,7 +29,7 @@ export function QuantityStepper({
         disabled={disabled || value <= 1}
         onClick={() => onChange(Math.max(1, value - 1))}
         className={cn(
-          "flex items-center justify-center rounded-full border border-background bg-primary text-primary-foreground shadow disabled:pointer-events-none disabled:opacity-40",
+          "flex cursor-pointer items-center justify-center rounded-full border border-background bg-primary text-primary-foreground shadow disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-40",
           classes.button
         )}
       >
@@ -44,7 +44,7 @@ export function QuantityStepper({
         disabled={disabled || value >= max}
         onClick={() => onChange(Math.min(max, value + 1))}
         className={cn(
-          "flex items-center justify-center rounded-full border border-background bg-primary text-primary-foreground shadow disabled:pointer-events-none disabled:opacity-40",
+          "flex cursor-pointer items-center justify-center rounded-full border border-background bg-primary text-primary-foreground shadow disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-40",
           classes.button
         )}
       >

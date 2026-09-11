@@ -1,7 +1,11 @@
 import { useRef, useState } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { redirect } from "@tanstack/react-router";
+import { ChevronLeft } from "lucide-react";
 import type { Wallet } from "@/api/contracts/wallets";
+import type { CollectorInfo } from "@/api/contracts/orders";
+import { formatEth } from "@/lib/eth";
+import { useMediaQuery } from "@/lib/use-media-query";
 import { ApiRequestError } from "@/api/contracts/common";
 import { queryClient } from "@/app/query-client";
 import { sessionQueryOptions, useSession } from "@/features/auth";
@@ -53,6 +57,8 @@ export const Route = createFileRoute("/checkout/")({
 function CheckoutPage() {
   const { user } = useSession();
   const navigate = useNavigate();
+  const router = useRouter();
+  const isDesktop = useMediaQuery("(min-width: 768px)");
   const cartQuery = useCartQuery();
   const walletsQuery = useWalletsQuery();
   const createOrder = useCreateOrderMutation();
@@ -62,15 +68,11 @@ function CheckoutPage() {
   const [connectedWallet, setConnectedWallet] = useState<Wallet | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  async function handleConfirm() {
-    setSubmitError(null);
-
+  async function finalizeOrder(collector: CollectorInfo) {
     if (!connectedWallet) {
       setSubmitError("Conecte uma carteira para continuar.");
       return;
     }
-    const collector = await collectorRef.current?.submit();
-    if (!collector) return;
 
     const fresh = await cartQuery.refetch();
     const cart = fresh.data;
@@ -122,6 +124,22 @@ function CheckoutPage() {
     }
   }
 
+  async function handleConfirmDesktop() {
+    setSubmitError(null);
+    const collector = await collectorRef.current?.submit();
+    if (!collector) return;
+    await finalizeOrder(collector);
+  }
+
+  async function handleConfirmMobile() {
+    setSubmitError(null);
+    if (!user) {
+      setSubmitError("Faça login para continuar.");
+      return;
+    }
+    await finalizeOrder({ name: user.name, email: user.email, document: user.id });
+  }
+
   if (cartQuery.isPending) return <CartSkeleton />;
   if (cartQuery.isError) return <CartErrorState onRetry={() => cartQuery.refetch()} />;
   if (cartQuery.data.quote.items.length === 0) return <CartEmptyState />;
@@ -129,7 +147,20 @@ function CheckoutPage() {
   return (
     <div className="flex flex-col gap-6">
       <h1 className="sr-only">Finalizar compra</h1>
-      <p className="text-sm font-bold text-foreground">
+
+      <div className="relative flex items-center justify-center md:hidden">
+        <button
+          type="button"
+          onClick={() => router.history.back()}
+          aria-label="Voltar"
+          className="absolute left-0 flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full border border-border bg-secondary/80"
+        >
+          <ChevronLeft className="size-5 text-foreground" aria-hidden />
+        </button>
+        <h2 className="text-xl font-bold text-foreground">Pagamento com carteira</h2>
+      </div>
+
+      <p className="hidden text-sm font-bold text-foreground md:block">
         <Link to="/" className="hover:text-accent">
           Início
         </Link>{" "}
@@ -138,43 +169,80 @@ function CheckoutPage() {
 
       <RealtimeNotices />
 
-      <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
-        <div className="flex flex-1 flex-col gap-3">
-          <h2 className="text-[17px] font-bold text-foreground">Perfil do colecionador</h2>
-          <CollectorInfoForm
-            ref={collectorRef}
-            defaultValues={{ name: user?.name, email: user?.email }}
-          />
-        </div>
-
-        <div className="flex w-full flex-col gap-5 lg:w-[405px]">
-          <h2 className="text-[17px] font-bold text-foreground">Seus NFTs</h2>
-          <OrderReview quote={cartQuery.data.quote} />
-
-          <h2 className="text-center text-[17px] font-bold text-foreground">Carteira e rede</h2>
+      {!isDesktop ? (
+        <div className="flex min-h-[calc(100dvh-100px)] flex-col">
+          <h2 className="pb-4 text-[16px] font-bold text-foreground">Carteira conectada</h2>
           {walletsQuery.data ? (
             <WalletConnectSelect
               wallets={walletsQuery.data}
               onConnectedChange={setConnectedWallet}
+              simplified
             />
           ) : null}
 
-          {submitError ? (
-            <p role="alert" className="text-sm text-destructive">
-              {submitError}
-            </p>
-          ) : null}
+          <div className="mt-auto flex flex-col gap-4 pt-6">
+            <div className="flex items-center justify-between border-t border-border pt-4 font-bold">
+              <span className="text-[16px] text-foreground">Total:</span>
+              <span className="text-lg text-accent">
+                {formatEth(cartQuery.data.quote.totalEth)}
+              </span>
+            </div>
 
-          <Button
-            type="button"
-            disabled={createOrder.isPending}
-            onClick={handleConfirm}
-            className="h-[45px] rounded-lg text-[15px]"
-          >
-            {createOrder.isPending ? "Confirmando compra..." : "Confirmar compra"}
-          </Button>
+            {submitError ? (
+              <p role="alert" className="text-sm text-destructive">
+                {submitError}
+              </p>
+            ) : null}
+
+            <button
+              type="button"
+              disabled={createOrder.isPending}
+              onClick={handleConfirmMobile}
+              className="flex h-[52px] w-full items-center justify-center rounded-full bg-gradient-to-r from-primary to-primary/80 text-base font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {createOrder.isPending ? "Confirmando compra..." : "Confirmar compra"}
+            </button>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
+          <div className="flex flex-1 flex-col gap-3">
+            <h2 className="text-[17px] font-bold text-foreground">Perfil do colecionador</h2>
+            <CollectorInfoForm
+              ref={collectorRef}
+              defaultValues={{ name: user?.name, email: user?.email }}
+            />
+          </div>
+
+          <div className="flex w-full flex-col gap-5 lg:w-[405px]">
+            <h2 className="text-[17px] font-bold text-foreground">Seus NFTs</h2>
+            <OrderReview quote={cartQuery.data.quote} />
+
+            <h2 className="text-center text-[17px] font-bold text-foreground">Carteira e rede</h2>
+            {walletsQuery.data ? (
+              <WalletConnectSelect
+                wallets={walletsQuery.data}
+                onConnectedChange={setConnectedWallet}
+              />
+            ) : null}
+
+            {submitError ? (
+              <p role="alert" className="text-sm text-destructive">
+                {submitError}
+              </p>
+            ) : null}
+
+            <Button
+              type="button"
+              disabled={createOrder.isPending}
+              onClick={handleConfirmDesktop}
+              className="h-[45px] rounded-lg text-[15px]"
+            >
+              {createOrder.isPending ? "Confirmando compra..." : "Confirmar compra"}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

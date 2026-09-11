@@ -6,21 +6,19 @@ export function FormField({
   id,
   label,
   error,
+  required,
   children,
   className,
 }: {
   id: string;
   label: string;
   error?: string;
+  required?: boolean;
   children: ReactNode;
   className?: string;
 }) {
   const errorId = `${id}-error`;
 
-  // Liga a mensagem de erro ao campo via aria-describedby automaticamente: deixar isso a
-  // cargo de cada formulário que usa FormField é fácil de esquecer (e a maioria dos
-  // consumidores esquecia, quebrando a associação exigida pelo §8 mesmo com aria-invalid
-  // presente). Preserva um aria-describedby que o próprio campo já traga.
   const field =
     error && isValidElement(children)
       ? cloneElement(children as ReactElement<{ "aria-describedby"?: string }>, {
@@ -35,7 +33,14 @@ export function FormField({
 
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
-      <Label htmlFor={id}>{label}</Label>
+      <Label htmlFor={id}>
+        {label}
+        {required ? (
+          <span className="ml-0.5 text-[#f0805f]" aria-hidden="true">
+            *
+          </span>
+        ) : null}
+      </Label>
       {field}
       {error ? (
         <p id={errorId} role="alert" className="text-sm text-destructive">

@@ -48,8 +48,9 @@ test.describe("Perfil e carteiras", () => {
     await page.goto("/account/wallets");
 
     await page.getByRole("button", { name: "Adicionar" }).click();
-    await page.getByLabel("Nome da carteira").fill("Carteira inválida");
+    await page.getByLabel("Apelido da carteira").fill("Carteira inválida");
     await page.getByLabel("Endereço da carteira").fill("0x123");
+    await page.getByLabel("Código de indicação").fill("REF-1");
     await page.getByRole("button", { name: "Salvar carteira" }).click();
 
     await expect(page.getByText("Endereço de carteira inválido")).toBeVisible();
@@ -61,14 +62,15 @@ test.describe("Perfil e carteiras", () => {
     await page.goto("/account/wallets");
 
     await page.getByRole("button", { name: "Adicionar" }).click();
-    await page.getByLabel("Nome da carteira").fill("Carteira do dia a dia");
+    await page.getByLabel("Apelido da carteira").fill("Carteira do dia a dia");
     await page.getByLabel("Endereço da carteira").fill("0xC3d4E5f6A1B2c3D4e5F6A1b2C3d4E5f6A1B2c3D4");
+    await page.getByLabel("Código de indicação").fill("REF-1");
     await page.getByRole("button", { name: "Salvar carteira" }).click();
 
     await expect(page.getByText("Carteira do dia a dia")).toBeVisible();
 
     await page.getByRole("button", { name: "Editar" }).last().click();
-    await page.getByLabel("Nome da carteira").fill("Carteira secundária editada");
+    await page.getByLabel("Apelido da carteira").fill("Carteira secundária editada");
     await page.getByRole("button", { name: "Salvar carteira" }).click();
 
     await expect(page.getByText("Carteira secundária editada")).toBeVisible();

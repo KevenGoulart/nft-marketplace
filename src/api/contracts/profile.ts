@@ -5,6 +5,9 @@ export const updateProfileRequestSchema = z.object({
   name: z.string().min(2, "Informe seu nome completo").optional(),
   email: z.email("E-mail inválido").optional(),
   avatarUrl: z.string().nullable().optional(),
+  username: z.string().min(3, "Informe um nome de usuário").optional(),
+  ensName: z.string().min(1, "Informe um nome ENS").optional(),
+  walletNickname: z.string().min(1, "Dê um apelido para sua carteira").optional(),
 });
 export type UpdateProfileRequest = z.infer<typeof updateProfileRequestSchema>;
 

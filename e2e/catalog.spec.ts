@@ -1,6 +1,8 @@
 import { test, expect, type Page } from "@playwright/test";
 
-const nftCards = (page: Page) => page.locator('a[href^="/nft/"]');
+// Escopado a #catalog-results: a sidebar também tem 1 link para /nft/:id no card
+// "NFT em destaque".
+const nftCards = (page: Page) => page.locator('#catalog-results a[href^="/nft/"]');
 
 async function gotoCatalog(page: Page) {
   await page.goto("/");

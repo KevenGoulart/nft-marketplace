@@ -7,6 +7,9 @@ export function toWireUser(user: UserRecord): User {
     name: user.name,
     email: user.email,
     avatarUrl: user.avatarUrl,
+    username: user.username,
+    ensName: user.ensName,
+    walletNickname: user.walletNickname,
     createdAt: user.createdAt,
   };
 }

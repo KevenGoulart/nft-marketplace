@@ -3,13 +3,16 @@ import { cn } from "@/lib/utils";
 import { NETWORK_LABELS } from "@/lib/networks";
 import { useCatalogFacetsQuery } from "../queries";
 import type { CatalogSearch } from "../search-schema";
+import { FeaturedCarousel } from "./featured-carousel";
 
 export function FiltersSidebar({
   search,
   onChange,
+  className,
 }: {
   search: CatalogSearch;
   onChange: (patch: Partial<CatalogSearch>) => void;
+  className?: string;
 }) {
   const facets = useCatalogFacetsQuery();
   const bounds = facets.data ?? { minPrice: 0, maxPrice: 1, collections: [], networks: [] };
@@ -30,8 +33,9 @@ export function FiltersSidebar({
   return (
     <aside
       aria-label="Filtros"
-      className="flex w-full flex-col gap-10 rounded-xl bg-card p-5 lg:w-[310px] lg:shrink-0"
+      className={cn("flex w-full flex-col gap-6 lg:w-[310px] lg:shrink-0", className)}
     >
+      <div className="flex flex-col gap-10 rounded-xl bg-card p-5">
       <div className="flex flex-col gap-3">
         <h2 className="text-lg font-bold text-foreground">Coleções</h2>
         <ul className="flex flex-col px-3">
@@ -49,7 +53,7 @@ export function FiltersSidebar({
                     })
                   }
                   className={cn(
-                    "flex w-full items-center justify-between py-2 text-[15px]",
+                    "flex w-full cursor-pointer items-center justify-between py-2 text-[15px]",
                     active
                       ? "font-bold text-accent"
                       : "text-secondary-foreground hover:text-foreground"
@@ -115,7 +119,7 @@ export function FiltersSidebar({
                 page: 1,
               })
             }
-            className="flex items-center justify-center rounded-md bg-primary px-3 py-2 text-base font-bold text-primary-foreground"
+            className="flex cursor-pointer items-center justify-center rounded-md bg-primary px-3 py-2 text-base font-bold text-primary-foreground"
           >
             Aplicar
           </button>
@@ -136,7 +140,7 @@ export function FiltersSidebar({
                     onChange({ network: active ? undefined : network, page: 1 })
                   }
                   className={cn(
-                    "flex w-full items-center justify-between py-2",
+                    "flex w-full cursor-pointer items-center justify-between py-2",
                     active
                       ? "font-bold text-accent"
                       : "text-secondary-foreground hover:text-foreground"
@@ -150,6 +154,9 @@ export function FiltersSidebar({
           })}
         </ul>
       </div>
+      </div>
+
+      <FeaturedCarousel />
     </aside>
   );
 }

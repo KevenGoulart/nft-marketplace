@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function NftGallery({
@@ -28,7 +29,7 @@ export function NftGallery({
             aria-current={index === activeIndex}
             onClick={() => setActiveIndex(index)}
             className={cn(
-              "size-[100px] shrink-0 overflow-hidden rounded-lg border-2",
+              "size-[100px] shrink-0 cursor-pointer overflow-hidden rounded-lg border-2",
               index === activeIndex ? "border-primary" : "border-transparent"
             )}
           >
@@ -37,13 +38,22 @@ export function NftGallery({
         ))}
       </div>
 
-      <div className="flex aspect-square w-full items-center justify-center rounded-md bg-card p-2 sm:size-[444px]">
+      <div className="relative flex aspect-square w-full items-center justify-center rounded-md bg-card p-2 sm:size-[444px]">
         <img
           src={activeImage}
           alt={`Imagem de ${title}`}
           className="size-full rounded-3xl object-cover"
           fetchPriority="high"
         />
+        <a
+          href={activeImage}
+          target="_blank"
+          rel="noreferrer"
+          aria-label="Ver imagem em tamanho real"
+          className="absolute -right-[7px] -top-[7px] flex size-[30px] items-center justify-center rounded-full bg-border text-foreground"
+        >
+          <Search className="size-4" aria-hidden />
+        </a>
       </div>
     </div>
   );

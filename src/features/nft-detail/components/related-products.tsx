@@ -1,6 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchNfts } from "@/features/catalog/api";
-import { NftCard } from "@/features/catalog/components/nft-card";
+import {
+  CAROUSEL_MAX_POOL_SIZE,
+  ProductCarousel,
+} from "@/features/catalog/components/product-carousel";
 
 export function RelatedProducts({
   collection,
@@ -10,24 +13,38 @@ export function RelatedProducts({
   excludeNftId: string;
 }) {
   const query = useQuery({
-    queryKey: ["nfts", "related", collection],
-    queryFn: ({ signal }) =>
-      fetchNfts({ collection, sort: "recent", page: 1, pageSize: 4 }, signal),
+    queryKey: ["nfts", "related", collection, excludeNftId],
+    queryFn: async ({ signal }) => {
+      const primary = await fetchNfts(
+        { collection, sort: "recent", page: 1, pageSize: CAROUSEL_MAX_POOL_SIZE },
+        signal
+      );
+      const items = primary.items.filter((nft) => nft.id !== excludeNftId);
+
+      if (items.length < CAROUSEL_MAX_POOL_SIZE) {
+        const seen = new Set([excludeNftId, ...items.map((nft) => nft.id)]);
+        const fallback = await fetchNfts(
+          { sort: "trending", page: 1, pageSize: CAROUSEL_MAX_POOL_SIZE },
+          signal
+        );
+        for (const nft of fallback.items) {
+          if (items.length >= CAROUSEL_MAX_POOL_SIZE) break;
+          if (seen.has(nft.id)) continue;
+          items.push(nft);
+          seen.add(nft.id);
+        }
+      }
+
+      return items.slice(0, CAROUSEL_MAX_POOL_SIZE);
+    },
   });
 
-  const items = (query.data?.items ?? []).filter((nft) => nft.id !== excludeNftId);
-  if (items.length === 0) return null;
-
   return (
-    <section aria-label="Mais desta coleção" className="flex flex-col gap-4">
-      <h2 className="border-b border-border pb-3 text-base font-bold text-foreground">
-        Mais desta coleção
-      </h2>
-      <div className="grid grid-cols-2 gap-x-8 gap-y-9 sm:grid-cols-3 lg:grid-cols-4">
-        {items.slice(0, 4).map((nft) => (
-          <NftCard key={nft.id} nft={nft} />
-        ))}
-      </div>
-    </section>
+    <ProductCarousel
+      title="Mais desta coleção"
+      resetKey={`${collection}:${excludeNftId}`}
+      pool={query.data ?? []}
+      pairOnMobile
+    />
   );
 }

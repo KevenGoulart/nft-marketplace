@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import type { CatalogSearch } from "../search-schema";
 import type { NftSort } from "@/api/contracts/nft";
@@ -16,23 +17,38 @@ export function CatalogToolbar({
   search: CatalogSearch;
   onChange: (patch: Partial<CatalogSearch>) => void;
 }) {
-  const activeTab = search.sort === "trending" ? "trending" : "recent";
+  const [recentTab, setRecentTab] = useState<"all" | "new">("all");
+  const activeTab =
+    search.sort === "trending" ? "trending" : search.sort === "recent" ? recentTab : null;
 
   return (
     <div className="flex flex-col gap-4 border-b border-border pb-3 sm:flex-row sm:items-center sm:justify-between">
       <div role="group" aria-label="Filtrar catálogo" className="flex gap-5 text-[15px] font-medium">
         <button
           type="button"
-          aria-pressed={activeTab === "recent"}
-          onClick={() => onChange({ sort: "recent", page: 1 })}
-          className={cn(activeTab === "recent" ? "text-accent" : "text-foreground")}
+          aria-pressed={activeTab === "all"}
+          onClick={() => {
+            setRecentTab("all");
+            onChange({ sort: "recent", page: 1 });
+          }}
+          className={cn(
+            "cursor-pointer border-b-2 border-transparent pb-1",
+            activeTab === "all" ? "border-accent font-bold text-accent" : "text-foreground"
+          )}
         >
           Todos os NFTs
         </button>
         <button
           type="button"
-          onClick={() => onChange({ sort: "recent", page: 1 })}
-          className="text-foreground"
+          aria-pressed={activeTab === "new"}
+          onClick={() => {
+            setRecentTab("new");
+            onChange({ sort: "recent", page: 1 });
+          }}
+          className={cn(
+            "cursor-pointer border-b-2 border-transparent pb-1",
+            activeTab === "new" ? "border-accent font-bold text-accent" : "text-foreground"
+          )}
         >
           Novos lançamentos
         </button>
@@ -40,7 +56,10 @@ export function CatalogToolbar({
           type="button"
           aria-pressed={activeTab === "trending"}
           onClick={() => onChange({ sort: "trending", page: 1 })}
-          className={cn(activeTab === "trending" ? "text-accent" : "text-foreground")}
+          className={cn(
+            "cursor-pointer border-b-2 border-transparent pb-1",
+            activeTab === "trending" ? "border-accent font-bold text-accent" : "text-foreground"
+          )}
         >
           Em alta
         </button>

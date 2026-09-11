@@ -1,4 +1,4 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type Locator, type Page } from "@playwright/test";
 import { cartItemRows, login, queueFailure, SEED_USER } from "./fixtures";
 
 async function cartBadgeCount(page: Page) {
@@ -32,7 +32,10 @@ test.describe("Detalhe do NFT e carrinho", () => {
     await login(page);
     await page.goto("/nft/nft-11");
 
-    const favoriteButton = page.getByRole("button", { name: "Favoritar" });
+    // `exact: true`: os cards de "Colecionadores também viram" mais abaixo na mesma
+    // página têm seus próprios botões de favoritar, com o título do NFT no rótulo (ver
+    // NftCard) — sem isso, "Favoritar" bateria por substring com todos eles também.
+    const favoriteButton = page.getByRole("button", { name: "Favoritar", exact: true });
     await expect(favoriteButton).toBeVisible();
 
     await queueFailure(page, { method: "POST", path: "/api/favorites/nft-11", status: 500 });
@@ -43,7 +46,7 @@ test.describe("Detalhe do NFT e carrinho", () => {
     // A mutation falha (mesmo após o retry automático) e o rollback devolve o estado
     // anterior — a UI otimista pode reverter antes que o teste observe o "true"
     // intermediário, então a evidência é o estado final: nunca fica presa em "Favoritado".
-    const revertedButton = page.getByRole("button", { name: "Favoritar" });
+    const revertedButton = page.getByRole("button", { name: "Favoritar", exact: true });
     await expect(revertedButton).toHaveAttribute("aria-pressed", "false", { timeout: 10000 });
 
     // Recarrega antes de tentar de novo: garante uma árvore de queries totalmente nova,
@@ -51,12 +54,13 @@ test.describe("Detalhe do NFT e carrinho", () => {
     // com a mutation da 2ª tentativa — e confirma que o servidor nunca aplicou o POST
     // que falhou (o estado persistido continua "não favoritado" depois do refresh).
     await page.reload();
-    await expect(page.getByRole("button", { name: "Favoritar" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Favoritar", exact: true })).toBeVisible();
 
-    await page.getByRole("button", { name: "Favoritar" }).click();
-    await expect(page.getByRole("button", { name: "Favoritado" })).toHaveAttribute(
+    await page.getByRole("button", { name: "Favoritar", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Favoritado", exact: true })).toHaveAttribute(
       "aria-pressed",
-      "true"
+      "true",
+      { timeout: 10000 }
     );
   });
 
@@ -85,26 +89,37 @@ test.describe("Detalhe do NFT e carrinho", () => {
     await login(page);
     await page.goto("/cart");
 
-    await page.getByLabel("Código promocional").fill("CODIGO-INEXISTENTE");
-    await page.getByRole("button", { name: "Aplicar" }).click();
-    await expect(page.getByRole("alert")).toBeVisible();
+    // O formulário de cupom (e o botão/alerta associados) existe duas vezes no DOM —
+    // resumo desktop e a barra fixa exclusiva do mobile, escondida via CSS em telas
+    // largas. `.and(':visible')` garante que cada interação pegue só a instância
+    // realmente visível no viewport do teste.
+    const visible = (locator: Locator) => locator.and(page.locator(":visible"));
 
-    await page.getByLabel("Código promocional").fill("EXPIRADA5");
-    await page.getByRole("button", { name: "Aplicar" }).click();
-    await expect(page.getByRole("alert")).toBeVisible();
+    await visible(page.getByLabel("Código promocional")).fill("CODIGO-INEXISTENTE");
+    await visible(page.getByRole("button", { name: "Aplicar" })).click();
+    await expect(visible(page.getByRole("alert"))).toBeVisible();
 
-    await page.getByLabel("Código promocional").fill("BEMVINDO10");
-    await page.getByRole("button", { name: "Aplicar" }).click();
-    await expect(page.getByText("BEMVINDO10")).toBeVisible();
+    await visible(page.getByLabel("Código promocional")).fill("EXPIRADA5");
+    await visible(page.getByRole("button", { name: "Aplicar" })).click();
+    await expect(visible(page.getByRole("alert"))).toBeVisible();
 
-    await page.getByRole("button", { name: "Remover cupom" }).click();
-    await expect(page.getByText("BEMVINDO10")).toHaveCount(0);
+    await visible(page.getByLabel("Código promocional")).fill("BEMVINDO10");
+    await visible(page.getByRole("button", { name: "Aplicar" })).click();
+    await expect(visible(page.getByText("BEMVINDO10"))).toBeVisible();
+
+    await visible(page.getByRole("button", { name: "Remover cupom" })).click();
+    await expect(visible(page.getByText("BEMVINDO10"))).toHaveCount(0);
   });
 
   test("favoritar exige login e redireciona de volta ao NFT após autenticar", async ({ page }) => {
     await page.goto("/nft/nft-2");
-    await page.getByRole("button", { name: "Favoritar" }).click();
+    await page.getByRole("button", { name: "Favoritar", exact: true }).click();
     await expect(page).toHaveURL(/\/login/);
+    // `toHaveURL` só confirma a URL — a troca de rota client-side (SPA) ainda pode
+    // não ter comitado o novo componente nesse instante. Sem esperar por um elemento
+    // exclusivo da página de login, "getByLabel('E-mail')" pode resolver pro link de
+    // compartilhar "Compartilhar por e-mail" que ainda está na tela antiga.
+    await expect(page.locator("#email")).toBeVisible();
 
     await page.getByLabel("E-mail").fill(SEED_USER.email);
     await page.getByLabel("Senha").fill(SEED_USER.password);
@@ -117,9 +132,10 @@ test.describe("Detalhe do NFT e carrinho", () => {
     await login(page);
     await page.goto("/nft/nft-2");
 
-    const favoriteButton = page.getByRole("button", { name: "Favoritar" });
+    const favoriteButton = page.getByRole("button", { name: "Favoritar", exact: true });
+    await expect(favoriteButton).toBeVisible();
     await favoriteButton.click();
-    await expect(page.getByRole("button", { name: "Favoritado" })).toHaveAttribute(
+    await expect(page.getByRole("button", { name: "Favoritado", exact: true })).toHaveAttribute(
       "aria-pressed",
       "true"
     );

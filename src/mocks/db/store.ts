@@ -42,7 +42,7 @@ function emptyState(): DbState {
 
 export let db: DbState = emptyState();
 
-const STORAGE_KEY = "kurio.mock.db.v4";
+const STORAGE_KEY = "kurio.mock.db.v7";
 
 function serialize(state: DbState): string {
   return JSON.stringify({
@@ -105,7 +105,15 @@ export const SEED_PASSWORD = "kurio123!";
 
 async function seedUser(
   state: DbState,
-  input: { id: string; name: string; email: string; avatarUrl: string | null }
+  input: {
+    id: string;
+    name: string;
+    email: string;
+    avatarUrl: string | null;
+    username: string;
+    ensName: string;
+    walletNickname: string;
+  }
 ) {
   const passwordHash = await hashPassword(SEED_PASSWORD, input.email);
   const user: UserRecord = {
@@ -114,6 +122,9 @@ async function seedUser(
     email: input.email,
     passwordHash,
     avatarUrl: input.avatarUrl,
+    username: input.username,
+    ensName: input.ensName,
+    walletNickname: input.walletNickname,
     createdAt: "2026-01-10T09:00:00.000Z",
   };
   state.users.set(user.id, user);
@@ -160,12 +171,18 @@ export async function resetDb() {
     name: "Ana Souza",
     email: "ana@kurio.test",
     avatarUrl: null,
+    username: "ana.souza",
+    ensName: "anasouza",
+    walletNickname: "Carteira principal",
   });
   const bruno = await seedUser(state, {
     id: "user-bruno",
     name: "Bruno Lima",
     email: "bruno@kurio.test",
     avatarUrl: null,
+    username: "bruno.lima",
+    ensName: "brunolima",
+    walletNickname: "Carteira principal",
   });
 
   state.favorites.set(ana.id, new Set(["nft-1", "nft-5", "nft-12"]));
@@ -185,6 +202,9 @@ export async function resetDb() {
       address: "0xA1b2C3d4E5f6A1b2C3d4E5f6A1b2C3d4E5f6A1b2",
       network: "ethereum",
       label: "Carteira principal",
+      walletType: "metamask",
+      referralCode: "KURIO-ANA",
+      secondaryReference: null,
       connectedAt: nowIso(),
     },
     secondary: null,

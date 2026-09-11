@@ -1,11 +1,14 @@
-import { useState } from "react";
-import type { Wallet, WalletsResponse } from "@/api/contracts/wallets";
+import { useEffect, useState } from "react";
+import type { Wallet, WalletsResponse, WalletType } from "@/api/contracts/wallets";
 import { NETWORK_LABELS } from "@/lib/networks";
+import { WALLET_TYPE_LABELS } from "@/lib/wallet-types";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { WalletForm } from "@/features/wallets/components/wallet-form";
 
 type ConnectionStatus = "idle" | "connecting" | "connected" | "refused";
+
+const WALLET_TYPE_ORDER: WalletType[] = ["walletconnect", "metamask", "coinbase"];
 
 function truncateAddress(address: string) {
   if (address.length <= 12) return address;
@@ -15,9 +18,11 @@ function truncateAddress(address: string) {
 export function WalletConnectSelect({
   wallets,
   onConnectedChange,
+  simplified = false,
 }: {
   wallets: WalletsResponse;
   onConnectedChange: (wallet: Wallet | null) => void;
+  simplified?: boolean;
 }) {
   const available = [wallets.primary, wallets.secondary].filter(
     (wallet): wallet is Wallet => wallet !== null
@@ -39,8 +44,13 @@ export function WalletConnectSelect({
   function selectWallet(id: string) {
     setSelectedId(id);
     setStatus("idle");
-    onConnectedChange(null);
+    if (!simplified) onConnectedChange(null);
   }
+
+  useEffect(() => {
+    if (simplified) onConnectedChange(selected);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [simplified, selected?.id]);
 
   function connect() {
     if (!selected) return;
@@ -82,7 +92,7 @@ export function WalletConnectSelect({
         {available.length > 0 ? (
           <button
             type="button"
-            className="text-left text-sm text-accent hover:underline"
+            className="cursor-pointer text-left text-sm text-accent hover:underline"
             onClick={() => setAddingWallet(false)}
           >
             Usar uma carteira já cadastrada
@@ -105,7 +115,7 @@ export function WalletConnectSelect({
               aria-checked={active}
               onClick={() => selectWallet(wallet.id)}
               className={cn(
-                "flex h-[45px] items-center gap-3 rounded-[3px] border px-4 text-left text-[15px] text-foreground",
+                "flex cursor-pointer items-center gap-3 rounded-2xl border bg-card px-4 py-3 text-left text-[15px] text-foreground md:h-[45px] md:rounded-[3px] md:bg-transparent md:px-4 md:py-0",
                 active ? "border-primary" : "border-border"
               )}
             >
@@ -116,8 +126,11 @@ export function WalletConnectSelect({
                   active ? "border-primary bg-primary" : "border-border-soft"
                 )}
               />
-              <span className="truncate">
-                {wallet.label} · {truncateAddress(wallet.address)}
+              <span className="flex min-w-0 flex-1 flex-col md:flex-row md:items-center md:gap-3">
+                <span className="truncate font-bold md:font-normal">{wallet.label}</span>
+                <span className="truncate text-sm text-tertiary md:text-[15px] md:text-foreground">
+                  {truncateAddress(wallet.address)}
+                </span>
               </span>
               <span className="ml-auto shrink-0 text-xs text-tertiary">
                 {NETWORK_LABELS[wallet.network]}
@@ -127,14 +140,48 @@ export function WalletConnectSelect({
         })}
         <button
           type="button"
-          className="text-left text-sm text-accent hover:underline"
+          className="cursor-pointer text-left text-sm text-accent hover:underline"
           onClick={() => setAddingWallet(true)}
         >
           Cadastrar outra carteira
         </button>
       </div>
 
-      {selected ? (
+      {simplified ? (
+        <div className="flex flex-col gap-4">
+          <p className="text-[16px] font-bold text-foreground">Carteira e rede</p>
+          <div className="flex flex-col gap-3">
+            {WALLET_TYPE_ORDER.map((type) => {
+              const active = selected?.walletType === type;
+              return (
+                <div
+                  key={type}
+                  className={cn(
+                    "flex items-center gap-3 rounded-2xl border bg-card px-4 py-3 text-[15px] text-foreground",
+                    active ? "border-primary" : "border-border"
+                  )}
+                >
+                  <span
+                    aria-hidden
+                    className="flex size-9 shrink-0 items-center justify-center rounded-full bg-secondary text-sm font-bold text-accent"
+                  >
+                    {WALLET_TYPE_LABELS[type][0]}
+                  </span>
+                  <span className="flex-1 truncate">{WALLET_TYPE_LABELS[type]}</span>
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "size-4 shrink-0 rounded-full border",
+                      active ? "border-primary bg-primary" : "border-border-soft"
+                    )}
+                  />
+                  {active ? <span className="sr-only">Rede da carteira selecionada</span> : null}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : selected ? (
         <div className="flex flex-col gap-2">
           {status === "idle" ? (
             <div className="flex gap-3">
@@ -158,7 +205,7 @@ export function WalletConnectSelect({
               </span>
               <button
                 type="button"
-                className="text-sm text-accent hover:underline"
+                className="cursor-pointer text-sm text-accent hover:underline"
                 onClick={disconnect}
               >
                 Desconectar
@@ -172,7 +219,7 @@ export function WalletConnectSelect({
               </span>
               <button
                 type="button"
-                className="text-sm text-accent hover:underline"
+                className="cursor-pointer text-sm text-accent hover:underline"
                 onClick={connect}
               >
                 Tentar de novo

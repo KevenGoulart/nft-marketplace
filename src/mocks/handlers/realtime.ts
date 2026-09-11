@@ -46,9 +46,6 @@ export const realtimeTestHandlers = [
     return new HttpResponse(null, { status: 204 });
   }),
 
-  // Utilitário de teste (§7): emite um `nft.updated` com versão explícita, para
-  // exercitar a tolerância do cliente a eventos duplicados/antigos via socket.io-client
-  // de verdade, sem depender de uma mudança real de preço/disponibilidade no mock-db.
   http.post("/api/mock/realtime/emit-nft-update", async ({ request }) => {
     const parsed = emitRawNftUpdateSchema.safeParse(await request.json());
     if (!parsed.success) {

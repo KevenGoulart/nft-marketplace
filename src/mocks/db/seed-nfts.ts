@@ -3,12 +3,37 @@ import type { NftRecord } from "./types";
 
 const SEED_TIMESTAMP = "2026-08-01T12:00:00.000Z";
 
-const IMAGES = [
-  "/mock-assets/nft/nft-1.webp",
-  "/mock-assets/nft/nft-2.webp",
-  "/mock-assets/nft/nft-3.webp",
-  "/mock-assets/nft/nft-4.webp",
+const IMAGE_VIOLET = "/mock-assets/nft/nft-1.webp";
+const IMAGE_NEUTRAL = "/mock-assets/nft/nft-2.webp";
+const IMAGE_EMERALD = "/mock-assets/nft/nft-3.webp";
+const IMAGE_GOLDEN = "/mock-assets/nft/nft-4.webp";
+
+const FIRST_NINE_IMAGES = [
+  IMAGE_EMERALD,
+  IMAGE_VIOLET,
+  IMAGE_NEUTRAL,
+  IMAGE_VIOLET,
+  IMAGE_VIOLET,
+  IMAGE_NEUTRAL,
+  IMAGE_GOLDEN,
+  IMAGE_GOLDEN,
+  IMAGE_GOLDEN,
 ];
+
+const IMAGE_BY_ADJECTIVE: Record<string, string> = {
+  Violet: IMAGE_VIOLET,
+  Cosmic: IMAGE_VIOLET,
+  Silver: IMAGE_VIOLET,
+  Azure: IMAGE_VIOLET,
+  Ivory: IMAGE_NEUTRAL,
+  Obsidian: IMAGE_NEUTRAL,
+  Amber: IMAGE_NEUTRAL,
+  Emerald: IMAGE_EMERALD,
+  Sage: IMAGE_EMERALD,
+  Crimson: IMAGE_EMERALD,
+  Golden: IMAGE_GOLDEN,
+  Neon: IMAGE_GOLDEN,
+};
 
 const COLLECTIONS = [
   "Arte digital",
@@ -72,7 +97,7 @@ export function buildNftSeed(): NftRecord[] {
     const noun = NOUNS[(i * 3) % NOUNS.length];
     const number = String(42 + i * 17).padStart(3, "0");
     const title = `${adjective} ${noun} #${number}`;
-    const image = IMAGES[i % IMAGES.length];
+    const image = FIRST_NINE_IMAGES[i] ?? IMAGE_BY_ADJECTIVE[adjective];
     const collection = COLLECTIONS[i % COLLECTIONS.length];
     const network = NETWORKS[i % NETWORKS.length];
 
@@ -84,17 +109,15 @@ export function buildNftSeed(): NftRecord[] {
     const editionsTotal = [1, 5, 10, 20][i % 4];
     const editionsAvailable = soldOut ? 0 : editionsTotal;
 
+    const rating = round2(3.6 + ((i * 0.37) % 1.4));
+    const reviewCount = 4 + ((i * 13) % 57);
+
     nfts.push({
       id: `nft-${i + 1}`,
       slug: `nft-${i + 1}`,
       title,
       image,
-      gallery: [
-        image,
-        IMAGES[(i + 1) % IMAGES.length],
-        IMAGES[(i + 2) % IMAGES.length],
-        IMAGES[(i + 3) % IMAGES.length],
-      ],
+      gallery: [image, image, image, image],
       collection,
       network,
       priceEth: String(price),
@@ -113,6 +136,8 @@ export function buildNftSeed(): NftRecord[] {
         { trait: "Traje", value: OUTFITS[i % OUTFITS.length] },
         { trait: "Acessório", value: ACCESSORIES[i % ACCESSORIES.length] },
       ],
+      rating,
+      reviewCount,
       version: 1,
       updatedAt: SEED_TIMESTAMP,
     });

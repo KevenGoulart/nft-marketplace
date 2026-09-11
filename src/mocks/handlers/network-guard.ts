@@ -7,13 +7,6 @@ import {
   sleep,
 } from "@/mocks/network-conditions";
 
-/**
- * Middleware global de caos de rede. Registrado antes de todos os handlers de
- * negócio: aplica latência/timeout/offline e então declina (retorna undefined)
- * para deixar o handler real da rota processar a requisição normalmente. Só
- * `/api/mock/*` fica de fora — os endpoints de controle do próprio caos
- * precisam responder de forma sempre confiável.
- */
 export const networkGuardHandlers = [
   http.all("*", async ({ request }) => {
     const url = new URL(request.url);

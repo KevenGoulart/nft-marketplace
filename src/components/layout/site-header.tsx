@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useSession, useLogoutMutation } from "@/features/auth";
+import { useAuthModal } from "@/features/auth/components/auth-modal-context";
 import { useCartQuery } from "@/features/cart/queries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +16,7 @@ function NavLink({ to, children }: { to: string; children: string }) {
   return (
     <Link
       to={to}
-      className="relative pb-1 text-base text-foreground [&.active]:text-accent [&.active]:font-bold [&.active]:border-b-[3px] [&.active]:border-accent"
+      className="flex h-full items-center border-b-[3px] border-transparent text-base text-foreground [&.active]:border-accent [&.active]:font-bold [&.active]:text-accent"
     >
       {children}
     </Link>
@@ -34,12 +35,19 @@ function HeaderAuthArea({ onNavigate }: { onNavigate?: () => void }) {
   const { user, isAuthenticated } = useSession();
   const navigate = useNavigate();
   const logout = useLogoutMutation();
+  const { open } = useAuthModal();
 
   if (!isAuthenticated || !user) {
     return (
       <Link
         to="/login"
-        onClick={onNavigate}
+        onClick={(event) => {
+          if (event.defaultPrevented || event.button !== 0) return;
+          if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+          event.preventDefault();
+          onNavigate?.();
+          open("login");
+        }}
         className="flex h-[35px] w-[100px] items-center justify-center gap-1 rounded-md bg-primary text-base font-bold text-primary-foreground"
       >
         <img src="/icons/login.svg" alt="" className="size-5" />
@@ -68,13 +76,6 @@ function HeaderAuthArea({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-/**
- * O Figma desktop só mostra o ícone de lupa no header — nenhuma caixa de busca fica
- * visível permanentemente na página (diferente do mobile, que tem uma caixa fixa no
- * topo). Este componente reproduz isso: ícone por padrão, expande para um campo de
- * texto ao clicar, envia a busca ao confirmar (Enter) e recolhe de novo ao perder o
- * foco vazio ou ao apertar Escape.
- */
 function HeaderSearch() {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
@@ -107,7 +108,7 @@ function HeaderSearch() {
       <button
         type="button"
         aria-label="Buscar NFTs"
-        className="rounded-sm focus-visible:outline-2 focus-visible:outline-ring"
+        className="cursor-pointer rounded-sm focus-visible:outline-2 focus-visible:outline-ring"
         onClick={open}
       >
         <img src="/icons/search.svg" alt="" className="size-5" />
@@ -167,28 +168,30 @@ export function SiteHeader() {
   const cartCount = useCartItemCount();
 
   return (
-    <header className="border-b border-border bg-background">
-      <div className="mx-auto flex h-[70px] max-w-6xl items-center justify-between px-4">
-        <Link
-          to="/"
-          className="text-sm font-bold tracking-[1.4px] text-foreground"
-        >
-          KURIO
-        </Link>
+    <header className="hidden bg-background md:block">
+      <div className="mx-auto max-w-6xl px-4">
+        <div className="flex h-[70px] items-center justify-between border-b border-border">
+          <Link
+            to="/"
+            className="text-sm font-bold tracking-[1.4px] text-foreground"
+          >
+            KURIO
+          </Link>
 
-        <nav className="hidden items-center gap-10 md:flex" aria-label="Principal">
-          <NavLink to="/">Início</NavLink>
-          <OutOfScopeNavItem>Mercado</OutOfScopeNavItem>
-          <OutOfScopeNavItem>Criadores</OutOfScopeNavItem>
-          <OutOfScopeNavItem>Aprenda</OutOfScopeNavItem>
-        </nav>
+          <nav className="hidden items-center gap-10 self-stretch md:flex" aria-label="Principal">
+            <NavLink to="/">Início</NavLink>
+            <OutOfScopeNavItem>Mercado</OutOfScopeNavItem>
+            <OutOfScopeNavItem>Criadores</OutOfScopeNavItem>
+            <OutOfScopeNavItem>Aprenda</OutOfScopeNavItem>
+          </nav>
 
-        <div className="hidden items-center gap-7 md:flex">
-          <HeaderSearch />
+          <div className="hidden items-center gap-7 md:flex">
+            <HeaderSearch />
 
-          <CartLink cartCount={cartCount} />
+            <CartLink cartCount={cartCount} />
 
-          <HeaderAuthArea />
+            <HeaderAuthArea />
+          </div>
         </div>
       </div>
     </header>

@@ -29,18 +29,13 @@ const POSTS = [
   },
 ];
 
-/**
- * "Diário da Cunhagem" no Figma é um blog editorial (data + tempo de leitura por post).
- * Fora do escopo do desafio (seção 1: "páginas editoriais... não fazem parte da
- * entrega") — mesmo critério já aplicado ao item "Aprenda" do menu. Mantido visível
- * para fidelidade ao design, mas sem nenhum elemento interativo/navegável: nada aqui é
- * `<a>`/`<button>` ou tem `onClick`, só `<div>`/`<span>`, para não aparentar uma
- * funcionalidade que não existe (proibido pelo enunciado).
- */
 export function MintingJournalSection() {
   return (
-    <section aria-labelledby="minting-journal-heading" className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2 border-b border-border pb-6 text-center">
+    <section
+      aria-labelledby="minting-journal-heading"
+      className="mt-14 mb-24 flex flex-col gap-6"
+    >
+      <div className="flex flex-col gap-2 text-center">
         <h2 id="minting-journal-heading" className="text-2xl font-bold text-foreground">
           Diário da Cunhagem
         </h2>
@@ -52,18 +47,20 @@ export function MintingJournalSection() {
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4" aria-disabled="true">
         {POSTS.map((post) => (
-          <div key={post.title} className="flex flex-col gap-3">
+          <div key={post.title} className="flex flex-col overflow-hidden rounded-lg bg-card">
             <img
               src={post.image}
               alt=""
-              className="aspect-[258/200] w-full rounded-xl object-cover"
+              className="aspect-[268/195] w-full object-cover"
             />
-            <p className="text-xs text-tertiary">
-              {post.date} · {post.readingTime}
-            </p>
-            <p className="font-bold text-foreground">{post.title}</p>
-            <p className="text-sm text-secondary-foreground">{post.excerpt}</p>
-            <span className="text-sm text-muted-foreground">Ler mais</span>
+            <div className="flex flex-col items-start gap-2 px-4 pt-3 pb-4">
+              <p className="text-xs text-secondary-foreground">
+                {post.date} · {post.readingTime}
+              </p>
+              <p className="text-base font-bold text-foreground">{post.title}</p>
+              <p className="text-xs text-secondary-foreground">{post.excerpt}</p>
+              <span className="text-xs font-bold text-accent">Ler mais →</span>
+            </div>
           </div>
         ))}
       </div>

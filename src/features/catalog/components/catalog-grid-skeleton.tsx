@@ -16,7 +16,7 @@ export function CatalogGridSkeleton() {
     <div
       role="status"
       aria-label="Carregando catálogo de NFTs"
-      className="grid grid-cols-1 gap-x-8 gap-y-9 sm:grid-cols-2 lg:grid-cols-3"
+      className="grid grid-cols-1 gap-x-8 gap-y-16 sm:grid-cols-2 lg:grid-cols-3"
     >
       {Array.from({ length: CATALOG_PAGE_SIZE }, (_, i) => (
         <NftCardSkeleton key={i} />

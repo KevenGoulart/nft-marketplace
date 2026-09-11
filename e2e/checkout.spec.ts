@@ -55,7 +55,14 @@ test.describe("Checkout", () => {
     await page.getByLabel("Documento (CPF/ID)").fill("12345678900");
     await page.getByRole("button", { name: "Confirmar compra" }).click();
 
-    await expect(page.getByText("Conecte uma carteira para continuar.")).toBeVisible();
+    // A mensagem de erro existe duas vezes no DOM (fluxo desktop e a barra fixa
+    // exclusiva do mobile, escondida via CSS em telas largas) — `.and(':visible')`
+    // garante que o matching pegue só a instância visível no viewport do teste.
+    await expect(
+      page
+        .getByText("Conecte uma carteira para continuar.")
+        .and(page.locator(":visible"))
+    ).toBeVisible();
     await expect(page).toHaveURL(/\/checkout\/?$/);
   });
 });

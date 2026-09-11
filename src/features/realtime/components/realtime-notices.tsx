@@ -19,7 +19,7 @@ export function RealtimeNotices() {
             type="button"
             aria-label="Dispensar aviso"
             onClick={() => dismiss(notice.id)}
-            className="shrink-0 text-foreground/80 hover:text-foreground"
+            className="shrink-0 cursor-pointer text-foreground/80 hover:text-foreground"
           >
             <X className="size-4" aria-hidden />
           </button>

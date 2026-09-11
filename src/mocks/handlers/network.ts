@@ -53,7 +53,6 @@ function parseOrError<T>(schema: z.ZodType<T>, body: unknown) {
 }
 
 export const networkControlHandlers = [
-  // Liga/desliga lentidão geral (latência variável) e indisponibilidade total de conexão.
   http.post("/api/mock/network", async ({ request }) => {
     const result = parseOrError(conditionsSchema, await request.json());
     if ("error" in result) return result.error;
@@ -61,7 +60,6 @@ export const networkControlHandlers = [
     return new HttpResponse(null, { status: 204 });
   }),
 
-  // Enfileira uma falha HTTP (4xx/5xx) para a próxima requisição que casar com method+path.
   http.post("/api/mock/network/fail-next", async ({ request }) => {
     const result = parseOrError(failureSchema, await request.json());
     if ("error" in result) return result.error;
@@ -69,7 +67,6 @@ export const networkControlHandlers = [
     return new HttpResponse(null, { status: 204 });
   }),
 
-  // Enfileira um atraso pontual (para simular timeout) na próxima requisição que casar com method+path.
   http.post("/api/mock/network/delay-next", async ({ request }) => {
     const result = parseOrError(delaySchema, await request.json());
     if ("error" in result) return result.error;
@@ -77,8 +74,6 @@ export const networkControlHandlers = [
     return new HttpResponse(null, { status: 204 });
   }),
 
-  // Enfileira o descarte da resposta (erro de rede) após o processamento real da próxima
-  // requisição que casar com method+path — usado para "timeout após criação do pedido".
   http.post("/api/mock/network/drop-next", async ({ request }) => {
     const result = parseOrError(targetSchema, await request.json());
     if ("error" in result) return result.error;

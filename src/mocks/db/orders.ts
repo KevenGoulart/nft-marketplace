@@ -87,14 +87,6 @@ function resolveOrder(current: OrderRecord) {
   notify(current);
 }
 
-/**
- * O mock roda inteiramente na aba do navegador — um `setTimeout` de resolução
- * morre junto com a página se ela recarregar enquanto o pedido está pendente.
- * Por isso `getOrder` chama isto antes de responder: se já passou tempo
- * suficiente desde a criação e o pedido ainda está "pending" (o timer original
- * nunca disparou), resolve agora mesmo, de forma preguiçosa, em vez de deixar o
- * pedido pendente para sempre depois de um refresh (§7 — recuperação após reload).
- */
 function resolveOrderIfDue(current: OrderRecord) {
   if (current.status !== "pending") return;
   const elapsed = Date.now() - new Date(current.createdAt).getTime();

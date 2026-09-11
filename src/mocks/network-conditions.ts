@@ -50,14 +50,6 @@ function persist() {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(persisted));
 }
 
-/**
- * `latencyMs`/`offline` (condições persistentes de "site lento"/"sem conexão")
- * sobrevivem a reload, igual ao cenário de negócio em `scenarios.ts` — só assim é
- * possível ligar a condição, navegar/recarregar e observar o efeito no carregamento
- * inicial da página. As filas de uso único (`failNext`/`delayNext`/`dropResponseOnce`)
- * são deliberadamente efêmeras: existem só para a próxima requisição dentro do mesmo
- * carregamento de página em que foram enfileiradas.
- */
 export function loadPersistedNetworkConditions() {
   if (typeof window === "undefined") return;
   const raw = window.localStorage.getItem(STORAGE_KEY);

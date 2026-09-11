@@ -13,8 +13,6 @@ import { realtimeTestHandlers } from "./realtime";
 import { realtimeHandlers } from "@/mocks/realtime/server";
 
 export const handlers = [
-  // Precisa vir antes de tudo: intercepta /api/* para aplicar latência/timeout/offline
-  // simulados e então declina (undefined) para o handler real de negócio seguir abaixo.
   ...networkGuardHandlers,
   ...sessionHandlers,
   ...nftHandlers,

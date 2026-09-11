@@ -32,10 +32,15 @@ test.describe("Tempo real via Socket.IO (§7)", () => {
       )
     ).toBeVisible();
 
+    // Essa mensagem existe duas vezes no DOM (fluxo desktop e a barra fixa exclusiva do
+    // mobile, escondida via CSS em telas largas) — `.and(':visible')` garante que o
+    // matching pegue só a instância visível no viewport do teste.
     await expect(
-      page.getByText(
-        "O preço, o cupom ou a disponibilidade mudaram. Revise o resumo abaixo e confirme novamente."
-      )
+      page
+        .getByText(
+          "O preço, o cupom ou a disponibilidade mudaram. Revise o resumo abaixo e confirme novamente."
+        )
+        .and(page.locator(":visible"))
     ).toBeVisible({ timeout: 5000 });
     await expect(page).toHaveURL(/\/checkout\/?$/);
   });
@@ -52,7 +57,13 @@ test.describe("Tempo real via Socket.IO (§7)", () => {
       nftId
     );
 
-    await expect(page.getByText(`${detail.priceEth} ETH`, { exact: true })).toBeVisible();
+    // Preço aparece duas vezes no DOM (layout desktop e a barra de compra exclusiva do
+    // mobile, escondida via CSS em telas largas) — `.and(':visible')` garante que o
+    // matching pegue só a instância realmente visível no viewport do teste.
+    const visiblePrice = (text: string) =>
+      page.getByText(text, { exact: true }).and(page.locator(":visible"));
+
+    await expect(visiblePrice(`${detail.priceEth} ETH`)).toBeVisible();
 
     // Duplicata: mesma versão já conhecida.
     await emitRawNftUpdate(page, {
@@ -73,7 +84,7 @@ test.describe("Tempo real via Socket.IO (§7)", () => {
       editionsAvailable: detail.editionsAvailable,
     });
     await expect(page.getByText("111 ETH")).toHaveCount(0);
-    await expect(page.getByText(`${detail.priceEth} ETH`, { exact: true })).toBeVisible();
+    await expect(visiblePrice(`${detail.priceEth} ETH`)).toBeVisible();
 
     // Evento genuinamente mais novo: deve ser aplicado normalmente.
     await emitRawNftUpdate(page, {
@@ -83,6 +94,6 @@ test.describe("Tempo real via Socket.IO (§7)", () => {
       previousPriceEth: detail.priceEth,
       editionsAvailable: detail.editionsAvailable,
     });
-    await expect(page.getByText("4.2 ETH", { exact: true })).toBeVisible();
+    await expect(visiblePrice("4.2 ETH")).toBeVisible();
   });
 });

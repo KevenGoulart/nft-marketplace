@@ -49,6 +49,8 @@ export function toNftDetail(record: NftRecord, userId: string | null): NftDetail
     gallery: record.gallery,
     attributes: record.attributes,
     editionAvailable: record.editionsAvailable > 0,
+    rating: record.rating,
+    reviewCount: record.reviewCount,
   };
 }
 

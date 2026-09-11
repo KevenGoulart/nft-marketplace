@@ -9,13 +9,21 @@ test.describe("Barra de abas mobile", () => {
     await page.getByRole("link", { name: "Carrinho" }).click();
     await expect(page).toHaveURL("/cart");
 
-    await page.getByRole("link", { name: "Início" }).click();
+    // O carrinho tem sua própria barra fixa (resumo da compra) no lugar da MobileTabBar
+    // global (ver useShowMobileTabBar em __root.tsx) — não há aba "Início" pra clicar aqui.
+    await expect(page.locator("nav.fixed")).toHaveCount(0);
+
+    await page.goBack();
     await expect(page).toHaveURL(/\/(\?.*)?$/);
   });
 
   test("aba Perfil leva ao login sem sessão e ao perfil autenticado", async ({ page }) => {
+    // Escopado à nav: agora que o rodapé também aparece no mobile, o link "Meu perfil"
+    // dele casa por substring com "Perfil" no matching padrão do Playwright.
+    const tabBar = page.getByRole("navigation", { name: "Principal" });
+
     await page.goto("/");
-    await page.getByRole("link", { name: "Perfil" }).click();
+    await tabBar.getByRole("link", { name: "Perfil" }).click();
     await expect(page).toHaveURL(/\/login/);
 
     await page.getByLabel("E-mail").fill(SEED_USER.email);
@@ -23,7 +31,7 @@ test.describe("Barra de abas mobile", () => {
     await page.getByRole("button", { name: "Entrar" }).click();
     await page.waitForURL((url) => url.pathname === "/");
 
-    await page.getByRole("link", { name: "Perfil" }).click();
+    await tabBar.getByRole("link", { name: "Perfil" }).click();
     await expect(page).toHaveURL("/account/profile");
   });
 
@@ -31,7 +39,9 @@ test.describe("Barra de abas mobile", () => {
     await login(page);
     const homeUrl = page.url();
 
-    const favoritesTab = page.getByText("Favoritos");
+    // Barra só com ícones (igual ao Figma, sem rótulo em texto) — o nome acessível vem
+    // de aria-label em vez de um nó de texto visível.
+    const favoritesTab = page.locator('[aria-label="Favoritos"]');
     await expect(favoritesTab).toBeVisible();
     await favoritesTab.click();
     await expect(page).toHaveURL(homeUrl);

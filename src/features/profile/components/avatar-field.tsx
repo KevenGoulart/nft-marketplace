@@ -84,6 +84,7 @@ export function AvatarField({
           size="sm"
           disabled={disabled}
           onClick={() => inputRef.current?.click()}
+          className="rounded-[4px]"
         >
           Alterar
         </Button>
@@ -92,7 +93,7 @@ export function AvatarField({
             type="button"
             disabled={disabled}
             onClick={() => onChange(null)}
-            className="text-sm text-foreground hover:text-accent"
+            className="cursor-pointer text-sm text-foreground hover:text-accent disabled:cursor-not-allowed"
           >
             Remover
           </button>

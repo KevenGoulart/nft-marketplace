@@ -46,7 +46,11 @@ function WalletsPage() {
             </p>
             <WalletSlotSection slot="primary" wallet={query.data.primary} />
             <hr className="border-border" />
-            <WalletSlotSection slot="secondary" wallet={query.data.secondary} />
+            <WalletSlotSection
+              slot="secondary"
+              wallet={query.data.secondary}
+              primaryWallet={query.data.primary}
+            />
           </>
         )}
       </div>

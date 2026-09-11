@@ -9,8 +9,41 @@ const SLOT_TITLE: Record<WalletSlot, string> = {
   secondary: "Carteira secundária",
 };
 
-export function WalletSlotSection({ slot, wallet }: { slot: WalletSlot; wallet: Wallet | null }) {
+export function WalletSlotSection({
+  slot,
+  wallet,
+  primaryWallet,
+}: {
+  slot: WalletSlot;
+  wallet: Wallet | null;
+  primaryWallet?: Wallet | null;
+}) {
   const [editing, setEditing] = useState(false);
+  const [duplicatingPrimary, setDuplicatingPrimary] = useState(false);
+
+  const canDuplicatePrimary = slot === "secondary" && Boolean(primaryWallet) && !wallet;
+
+  function startEditing(duplicatePrimary: boolean) {
+    setDuplicatingPrimary(duplicatePrimary);
+    setEditing(true);
+  }
+
+  function stopEditing() {
+    setEditing(false);
+    setDuplicatingPrimary(false);
+  }
+
+  const sourceWallet = wallet ?? (duplicatingPrimary ? (primaryWallet ?? null) : null);
+  const defaultValues = sourceWallet
+    ? {
+        address: sourceWallet.address,
+        network: sourceWallet.network,
+        label: sourceWallet.label,
+        walletType: sourceWallet.walletType,
+        referralCode: sourceWallet.referralCode,
+        secondaryReference: sourceWallet.secondaryReference,
+      }
+    : undefined;
 
   return (
     <section className="flex w-full flex-col gap-3">
@@ -19,8 +52,8 @@ export function WalletSlotSection({ slot, wallet }: { slot: WalletSlot; wallet: 
         {wallet && !editing ? (
           <button
             type="button"
-            className="text-[15px] font-medium text-accent hover:underline"
-            onClick={() => setEditing(true)}
+            className="cursor-pointer text-[15px] font-medium text-accent hover:underline"
+            onClick={() => startEditing(false)}
           >
             Editar
           </button>
@@ -34,9 +67,26 @@ export function WalletSlotSection({ slot, wallet }: { slot: WalletSlot; wallet: 
               ? "Você ainda não cadastrou uma carteira principal."
               : "Você ainda não adicionou uma carteira secundária."}
           </p>
-          <Button type="button" variant="outline" className="w-fit" onClick={() => setEditing(true)}>
-            Adicionar
-          </Button>
+          <div className="flex gap-3">
+            {canDuplicatePrimary ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-fit"
+                onClick={() => startEditing(true)}
+              >
+                Duplicar carteira principal
+              </Button>
+            ) : null}
+            <Button
+              type="button"
+              variant="outline"
+              className="w-fit"
+              onClick={() => startEditing(false)}
+            >
+              Adicionar
+            </Button>
+          </div>
         </>
       ) : null}
 
@@ -53,12 +103,7 @@ export function WalletSlotSection({ slot, wallet }: { slot: WalletSlot; wallet: 
       ) : null}
 
       {editing ? (
-        <WalletForm
-          slot={slot}
-          defaultValues={wallet ? { address: wallet.address, network: wallet.network, label: wallet.label } : undefined}
-          onSaved={() => setEditing(false)}
-          onCancel={() => setEditing(false)}
-        />
+        <WalletForm slot={slot} defaultValues={defaultValues} onSaved={stopEditing} onCancel={stopEditing} />
       ) : null}
     </section>
   );

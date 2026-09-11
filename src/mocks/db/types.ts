@@ -6,6 +6,9 @@ export interface UserRecord {
   email: string;
   passwordHash: string;
   avatarUrl: string | null;
+  username: string;
+  ensName: string;
+  walletNickname: string;
   createdAt: string;
 }
 
@@ -24,6 +27,8 @@ export interface NftRecord {
   description: string;
   creator: { name: string; avatarUrl: string };
   attributes: { trait: string; value: string }[];
+  rating: number;
+  reviewCount: number;
   version: number;
   updatedAt: string;
 }
@@ -78,5 +83,8 @@ export interface WalletRecord {
   address: string;
   network: Network;
   label: string;
+  walletType: "metamask" | "walletconnect" | "coinbase";
+  referralCode: string;
+  secondaryReference: string | null;
   connectedAt: string;
 }

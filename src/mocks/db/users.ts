@@ -21,12 +21,22 @@ export async function createUser(input: {
     throw new ConflictError("Já existe uma conta com este e-mail");
   }
 
+  const usernameSlug = input.name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, ".")
+    .replace(/^\.+|\.+$/g, "");
+
   const user: UserRecord = {
     id: newId("user"),
     name: input.name,
     email: input.email,
     passwordHash: await hashPassword(input.password, input.email),
     avatarUrl: null,
+    username: usernameSlug || "colecionador",
+    ensName: usernameSlug.replace(/\./g, "") || "colecionador",
+    walletNickname: "Carteira principal",
     createdAt: nowIso(),
   };
   db.users.set(user.id, user);
@@ -76,7 +86,14 @@ export function requireUser(token: string | null): UserRecord {
 
 export function updateProfile(
   userId: string,
-  patch: { name?: string; email?: string; avatarUrl?: string | null }
+  patch: {
+    name?: string;
+    email?: string;
+    avatarUrl?: string | null;
+    username?: string;
+    ensName?: string;
+    walletNickname?: string;
+  }
 ): UserRecord {
   const user = findUserById(userId);
   if (!user) throw new UnauthenticatedError("Sessão expirada ou inválida");
@@ -94,6 +111,9 @@ export function updateProfile(
   }
   if (patch.name) user.name = patch.name;
   if (patch.avatarUrl !== undefined) user.avatarUrl = patch.avatarUrl;
+  if (patch.username) user.username = patch.username;
+  if (patch.ensName) user.ensName = patch.ensName;
+  if (patch.walletNickname) user.walletNickname = patch.walletNickname;
 
   persistDb();
   return user;

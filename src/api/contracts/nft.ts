@@ -46,5 +46,7 @@ export const nftDetailSchema = nftSummarySchema.extend({
   gallery: z.array(z.string()).min(1),
   attributes: z.array(nftAttributeSchema),
   editionAvailable: z.boolean(),
+  rating: z.number().min(0).max(5),
+  reviewCount: z.number().int().min(0),
 });
 export type NftDetail = z.infer<typeof nftDetailSchema>;

@@ -7,7 +7,13 @@ import { Button } from "@/components/ui/button";
 import { formatEth } from "@/lib/eth";
 import { useApplyCouponMutation, useRemoveCouponMutation } from "../queries";
 
-export function CouponForm({ appliedCoupon }: { appliedCoupon: AppliedCoupon | null }) {
+export function CouponForm({
+  appliedCoupon,
+  idPrefix = "coupon",
+}: {
+  appliedCoupon: AppliedCoupon | null;
+  idPrefix?: string;
+}) {
   const [code, setCode] = useState("");
   const apply = useApplyCouponMutation();
   const remove = useRemoveCouponMutation();
@@ -21,12 +27,15 @@ export function CouponForm({ appliedCoupon }: { appliedCoupon: AppliedCoupon | n
   if (appliedCoupon) {
     return (
       <div className="flex flex-col gap-2">
-        <span id="coupon-label" className="text-sm font-bold text-foreground">
+        <span
+          id={`${idPrefix}-label`}
+          className="sr-only text-sm font-bold text-foreground md:not-sr-only"
+        >
           Código promocional
         </span>
         <div
-          className="flex h-10 items-center justify-between rounded-[3px] border border-primary pl-2 pr-1"
-          aria-labelledby="coupon-label"
+          className="flex h-10 items-center justify-between rounded-full border border-primary pl-3 pr-1 md:rounded-[3px] md:pl-2"
+          aria-labelledby={`${idPrefix}-label`}
         >
           <span className="text-sm text-foreground">
             <strong className="text-accent">{appliedCoupon.code}</strong> — {appliedCoupon.label}{" "}
@@ -57,29 +66,32 @@ export function CouponForm({ appliedCoupon }: { appliedCoupon: AppliedCoupon | n
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-      <label htmlFor="coupon-code" className="text-sm font-bold text-foreground">
+      <label
+        htmlFor={`${idPrefix}-code`}
+        className="sr-only text-sm font-bold text-foreground md:not-sr-only"
+      >
         Código promocional
       </label>
-      <div className="flex h-10 items-stretch overflow-hidden rounded-[3px] border border-primary">
+      <div className="flex h-10 gap-2 md:items-stretch md:gap-0 md:overflow-hidden md:rounded-[3px] md:border md:border-primary">
         <Input
-          id="coupon-code"
+          id={`${idPrefix}-code`}
           value={code}
           onChange={(event) => setCode(event.target.value)}
           placeholder="Digite o código promocional..."
           aria-invalid={Boolean(errorMessage)}
-          aria-describedby={errorMessage ? "coupon-error" : undefined}
-          className="h-full min-w-0 flex-1 rounded-none border-none px-2 text-xs text-tertiary shadow-none focus-visible:ring-0"
+          aria-describedby={errorMessage ? `${idPrefix}-error` : undefined}
+          className="h-full min-w-0 flex-1 rounded-full border-primary px-4 text-xs text-tertiary shadow-none focus-visible:ring-0 md:rounded-none md:border-none md:px-2"
         />
         <button
           type="submit"
           disabled={apply.isPending || !code.trim()}
-          className="w-[102px] shrink-0 bg-primary text-[15px] font-bold text-primary-foreground disabled:opacity-60"
+          className="w-[102px] shrink-0 cursor-pointer rounded-full bg-primary text-[15px] font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60 md:rounded-none"
         >
           {apply.isPending ? "Aplicando..." : "Aplicar"}
         </button>
       </div>
       {errorMessage ? (
-        <p id="coupon-error" role="alert" className="text-sm text-destructive">
+        <p id={`${idPrefix}-error`} role="alert" className="text-sm text-destructive">
           {errorMessage}
         </p>
       ) : null}
